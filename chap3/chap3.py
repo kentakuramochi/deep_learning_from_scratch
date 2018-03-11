@@ -6,7 +6,6 @@ Deep Learning from Scrach
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import matplotlib.pyplot as plt
 import pickle
 from sklearn.datasets import fetch_mldata
 from sklearn.cross_validation import train_test_split
@@ -22,11 +21,11 @@ def change_one_hot_label(labels):
 
     return t
 
-def load_mnist(norm = True, flatten = True, one_hot_label = False):
+def load_mnist(norm=True, flatten=True, one_hot_label=False):
     """
     load MNIST dataset
     """
-    mnist = fetch_mldata("MNIST original", data_home = "./mnist")
+    mnist = fetch_mldata("MNIST original", data_home="../mnist")
 
     mnist_data = mnist.data.astype("float32")
     mnist_label = mnist.target.astype("int32")
@@ -41,7 +40,7 @@ def load_mnist(norm = True, flatten = True, one_hot_label = False):
         mnist_label = change_one_hot_label(mnist_label)
 
     data_train, data_test, label_train, label_test =\
-        train_test_split(mnist_data, mnist_label, train_size = 60000, test_size = 10000)
+        train_test_split(mnist_data, mnist_label, train_size=60000, test_size=10000)
 
     return (data_train, label_train), (data_test, label_test)
 
@@ -84,28 +83,29 @@ def predict(network, x):
     z1 = sigmoid(np.dot(x, W1) + b1)
     z2 = sigmoid(np.dot(z1, W2) + b2)
 
-    probs = softmax(np.dot(z2, W3) + b3)
-
-    return np.argmax(probs)
+    return softmax(np.dot(z2, W3) + b3)
 
 def main():
     """
     main
     """
-    (vec_train, lab_train), (vec_test, lab_test) = \
-        load_mnist(flatten = True, norm = True, one_hot_label = False)
+    (x_train, t_train), (x_test, t_test) = \
+        load_mnist(flatten=True, norm=True, one_hot_label=False)
 
     network = init_network()
 
+    batch_size = 100
+
     accuracy = 0
 
-    for (vec, lab) in zip(vec_test, lab_test):
-        out = predict(network, vec)
+    for i in range(0, len(x_test), batch_size):
+        x_batch = x_test[i:i+batch_size]
+        y_batch = predict(network, x_batch)
+        p = np.argmax(y_batch, axis=1)
 
-        if out == lab:
-            accuracy += 1
+        accuracy += np.sum(p == t_test[i:i+batch_size])
 
-    print("Accuracy: {0}".format(accuracy / len(lab_test)))
+    print("Accuracy: {0}".format(accuracy / len(t_test)))
 
 if __name__ == "__main__":
     main()

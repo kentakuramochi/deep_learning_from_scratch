@@ -5,44 +5,11 @@ Deep Learning from Scrach
 # !usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys, os
+sys.path.append(os.pardir)
 import numpy as np
 import pickle
-from sklearn.datasets import fetch_mldata
-from sklearn.cross_validation import train_test_split
-
-def change_one_hot_label(labels):
-    """
-    change label to one-hot array
-    """
-    t = np.zeros((labels.size, 10))
-
-    for (index, row) in enumerate(t):
-        row[labels[index]] = 1
-
-    return t
-
-def load_mnist(norm=True, flatten=True, one_hot_label=False):
-    """
-    load MNIST dataset
-    """
-    mnist = fetch_mldata("MNIST original", data_home="../mnist")
-
-    mnist_data = mnist.data.astype("float32")
-    mnist_label = mnist.target.astype("int32")
-
-    if norm:
-        mnist_data /= 255
-
-    if not flatten:
-        mnist_data = mnist_data.reshape(-1, 1, 28, 28)
-
-    if one_hot_label:
-        mnist_label = change_one_hot_label(mnist_label)
-
-    data_train, data_test, label_train, label_test =\
-        train_test_split(mnist_data, mnist_label, train_size=60000, test_size=10000)
-
-    return (data_train, label_train), (data_test, label_test)
+from dataset.mnist import load_mnist
 
 def sigmoid(x):
     """
@@ -68,7 +35,7 @@ def init_network():
     """
     initialize 3 layer NN
     """
-    with open("./mnist/sample_weight.pkl", "rb") as file:
+    with open("../dataset/sample_weight.pkl", "rb") as file:
         network = pickle.load(file)
 
     return network

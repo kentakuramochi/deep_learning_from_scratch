@@ -14,7 +14,7 @@ class TwoLayerNet:
         self.params["W1"] = weight_init_std * \
             np.random.randn(input_size, hidden_size)
         self.params["b1"] = np.zeros(hidden_size)
-        self.params["W1"] = weight_init_std * \
+        self.params["W2"] = weight_init_std * \
             np.random.randn(hidden_size, output_size)
         self.params["b2"] = np.zeros(output_size)
 
@@ -40,22 +40,13 @@ class TwoLayerNet:
 
         return np.sum(y == t) / float(x.shape[0])
 
-def main():
-    net = simpleNet()
-    print(net.W)
+    def numerical_gradient(self, x, t):
+        loss_W = lambda W: self.loss(x, t)
 
-    x = np.array([0.6, 0.9])
-    p = net.predict(x)
-    print(p)
-    print(np.argmax(p))
+        grads = {}
+        grads["W1"] = numerical_gradient(loss_W, self.params["W1"])
+        grads["b1"] = numerical_gradient(loss_W, self.params["b1"])
+        grads["W2"] = numerical_gradient(loss_W, self.params["W2"])
+        grads["b2"] = numerical_gradient(loss_W, self.params["b2"])
 
-    f = lambda w: net.loss(x, t)
-
-    t = np.array([0, 0, 1])
-    net.loss(x, t)
-
-    dW = numerical_gradient(f, net.W)
-    print(dW)
-
-if __name__ == "__main__":
-    main()
+        return grads

@@ -4,24 +4,20 @@
 import numpy as np
 
 def sigmoid(x):
-    """
-    sigmoid function
-    """
     return 1 / (1 + np.exp(-x))
 
 def identity_function(x):
-    """
-    identity function
-    """
     return x
 
-def softmax(a):
-    """
-    softmax
-    """
-    c = a.max()
+def softmax(x):
+    if x.ndim == 2:
+        x = x.T
+        x = x - np.max(x, axis=0)
+        y = np.exp(x) / np.sum(np.exp(x), axis=0)
+        return y.T
 
-    return np.exp(a - c) / np.sum(np.exp(a - c))
+    x = x - np.max(x)
+    return np.exp(x) / np.sum(np.exp(x))
 
 def mean_squared_error(y, t):
     return 0.5 * np.sum((y - t) ** 2)
@@ -31,6 +27,9 @@ def cross_entropy_error(y, t):
         t = t.reshape(1, t.size)
         y = y.reshape(1, y.size)
 
+    if t.size == y.size:
+        t = t.argmax(axis=1)
+
     batch_size = y.shape[0]
 
-    return -np.sum(t * np.log(y)) / batch_size
+    return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size

@@ -9,7 +9,7 @@ from two_layer_net import TwoLayerNet
 
 def main():
     (x_train, t_train), (x_test, t_test) =\
-        load_mnist(norm=True, one_hot_label=True)
+        load_mnist(normalize=True, one_hot_label=True)
 
     iters_num = 10000
     train_size = x_train.shape[0]

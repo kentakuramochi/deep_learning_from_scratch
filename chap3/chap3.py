@@ -57,7 +57,7 @@ def main():
     main
     """
     (x_train, t_train), (x_test, t_test) = \
-        load_mnist(flatten=True, norm=True, one_hot_label=False)
+        load_mnist(flatten=True, normalize=True, one_hot_label=False)
 
     network = init_network()
 

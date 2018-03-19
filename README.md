@@ -1,4 +1,4 @@
-# Deep learning from scrach
+# Deep_learning_from_scratch
 
 # Description
 

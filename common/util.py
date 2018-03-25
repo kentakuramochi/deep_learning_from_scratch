@@ -40,7 +40,7 @@ def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
 
 
 def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
-    N, C, H, W = input_data.shape
+    N, C, H, W = input_shape
     out_h = (H + 2 * pad - filter_h) // stride + 1
     out_w = (H + 2 * pad - filter_w) // stride + 1
     col = col.reshape(N, out_h, out_w, C, filter_h, filter_w).transpose(0, 3, 4, 5, 1, 2)

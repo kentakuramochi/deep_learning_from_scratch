@@ -77,4 +77,4 @@ class Trainer:
 
         if self.verbose:
             print("===== Final Test Accuracy =====")
-            print("test acc" + str(test_acc))
+            print("test acc:" + str(test_acc))

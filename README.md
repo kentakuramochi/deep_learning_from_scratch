@@ -5,6 +5,7 @@
 ## サポートサイト
 
 - [『ゼロから作る Deep Learning』](https://github.com/oreilly-japan/deep-learning-from-scratch)
+- [『ゼロから作るDeep Learning ❷ ―自然言語処理編』](https://github.com/oreilly-japan/deep-learning-from-scratch-2)
 
 ## ライセンス
 

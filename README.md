@@ -1,7 +1,13 @@
-# Deep_learning_from_scratch
+# study-deep-learning-from-scratch
 
-# Description
+『ゼロから作るDeep Learning』シリーズの学習記録
 
-『ゼロから作るDeep Learning』の学習記録
+## サポートサイト
 
-[O'reilly Japan 公式](https://www.oreilly.co.jp/books/9784873117584/)
+- [『ゼロから作る Deep Learning』](https://github.com/oreilly-japan/deep-learning-from-scratch)
+
+## ライセンス
+
+MIT ライセンス
+
+ライセンスは上記サポートサイトのリポジトリに準拠します。

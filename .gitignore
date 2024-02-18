@@ -1,3 +1,5 @@
-vscode/
+.venv/
+.vscode/
+__pycache__/
 dataset/
-*/__pycache__
+*.pkl

@@ -65,8 +65,8 @@ class Trainer:
 
             self.current_epoch += 1
 
-    def plot(self, ylim=None):
-        """ Plot the progress of the training
+    def plot(self, saveas=None, ylim=None):
+        """ Plot a figure of the progress of the training
         """
         x = np.arange(len(self.loss_list))
         if ylim is not None:
@@ -75,6 +75,8 @@ class Trainer:
         plt.xlabel(f"iterations x({self.eval_interval})")
         plt.ylabel("loss")
         plt.show()
+        if saveas is not None:
+            plt.savefig(saveas)
 
 
 def remove_duplicate(params, grads):

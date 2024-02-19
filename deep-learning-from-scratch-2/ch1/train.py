@@ -23,7 +23,7 @@ def main():
 
     trainer  = Trainer(model, optimizer)
     trainer.fit(x, t, max_epoch, batch_size, eval_interval=10)
-    trainer.plot()
+    trainer.plot(saveas="train.png")
 
 
 if __name__ == "__main__":

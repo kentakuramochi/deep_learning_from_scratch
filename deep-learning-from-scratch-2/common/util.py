@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 
-import numpy as np
+from common.np import *
 
 def clip_grads(grads, max_norm):
     """ Clip gradients with the specified maximum value

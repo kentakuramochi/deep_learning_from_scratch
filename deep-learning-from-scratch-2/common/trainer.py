@@ -2,9 +2,10 @@ import sys
 sys.path.append("..")
 
 import time
-import numpy as np
+import numpy  # Use NumPy function explicitly
 import matplotlib.pyplot as plt
 
+from common.np import *
 from common.util import clip_grads
 
 class Trainer:
@@ -32,7 +33,7 @@ class Trainer:
         start_time = time.time()
         for epoch in range(max_epoch):
             # Shuffle the dataset
-            idx = np.random.permutation(np.arange(data_size))
+            idx = numpy.random.permutation(np.arange(data_size))
             x = x[idx]
             t = t[idx]
 
@@ -68,7 +69,7 @@ class Trainer:
     def plot(self, saveas=None, ylim=None):
         """ Plot a figure of the progress of the training
         """
-        x = np.arange(len(self.loss_list))
+        x = numpy.arange(len(self.loss_list))
         if ylim is not None:
             plt.ylim(*ylim)
         plt.plot(x, self.loss_list, label="train")

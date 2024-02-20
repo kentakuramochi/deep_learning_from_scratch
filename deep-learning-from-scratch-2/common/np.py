@@ -2,7 +2,6 @@ from common.config import GPU
 
 
 if GPU:
-    pass
     import cupy as np
     # Set the current allocate for GPU memory
     np.cuda.set_allocator(np.cuda.MemoryPool().malloc)

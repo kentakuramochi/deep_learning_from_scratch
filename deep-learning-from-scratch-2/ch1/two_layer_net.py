@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
-import numpy as np
 
+from common.np import *
 from common.layers import Affine, Sigmoid, SoftmaxWithLoss
 
 

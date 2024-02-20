@@ -33,7 +33,7 @@ class Trainer:
         start_time = time.time()
         for epoch in range(max_epoch):
             # Shuffle the dataset
-            idx = numpy.random.permutation(np.arange(data_size))
+            idx = numpy.random.permutation(numpy.arange(data_size))
             x = x[idx]
             t = t[idx]
 
@@ -61,7 +61,7 @@ class Trainer:
                         "| epoch %d |  iter %d / %d | time %d[s] | loss %.2f"
                         % (self.current_epoch + 1, iters + 1, max_iters, elapsed_time, avg_loss)
                     )
-                    self.loss_list.append(avg_loss)
+                    self.loss_list.append(float(avg_loss))
                     total_loss, loss_count = 0, 0
 
             self.current_epoch += 1

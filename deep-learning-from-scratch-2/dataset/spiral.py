@@ -1,4 +1,7 @@
-import numpy as np
+import sys
+sys.path.append("..")
+
+from common.np import *
 
 
 def load_data(seed=1984):

@@ -3,6 +3,7 @@ sys.path.append("..")
 import numpy as np
 import matplotlib.pyplot as plt
 
+# common.config.GPU must be False
 from common.optimizer import SGD
 from dataset import spiral
 from two_layer_net import TwoLayerNet
@@ -57,6 +58,38 @@ def main():
                 )
                 loss_list.append(avg_loss)
                 total_loss, loss_count = 0, 0
+
+    # Plot the loss vs iterations
+    plt.plot(np.arange(len(loss_list)), loss_list, label="train")
+    plt.xlabel("iterations (x10)")
+    plt.ylabel("loss")
+    plt.show()
+    plt.savefig("train_custom_loop.png")
+
+    plt.clf()
+
+    # Plot a decision boundary
+    h = 0.001
+    x_min, x_max = x[:, 0].min() - .1, x[:, 0].max() + .1
+    y_min, y_max = x[:, 1].min() - .1, x[:, 1].max() + .1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))  # Coordinate mesh
+    X = np.c_[xx.ravel(), yy.ravel()]
+    score = model.predict(X)
+    predict_cls = np.argmax(score, axis=1)  # Predictions
+    Z = predict_cls.reshape(xx.shape)
+    plt.contourf(xx, yy, Z)  # Draw contours for each class
+    plt.axis("off")
+
+    # Plot data points
+    x, t = spiral.load_data()
+    N = 100
+    CLS_NUM = 3
+    markers = ["o", "x", "^"]
+    for i in range(CLS_NUM):
+        plt.scatter(x[i*N:(i+1)*N, 0], x[i*N:(i+1)*N, 1], s=40, marker=markers[i])  # Scatter plot
+
+    plt.show()
+    plt.savefig("decision_boundary.png")
 
 
 if __name__ == "__main__":

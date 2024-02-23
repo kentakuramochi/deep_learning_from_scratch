@@ -62,7 +62,7 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
 
 
 def create_co_matrix(corpus, vocab_size, window_size=1):
-    """ Create a co-occurence matrix from the corpus
+    """ Create a co-occurrence matrix from the corpus
     """
     corpus_size = len(corpus)
     co_matrix = np.zeros((vocab_size, vocab_size), dtype=np.int32)
@@ -81,6 +81,29 @@ def create_co_matrix(corpus, vocab_size, window_size=1):
                 co_matrix[word_id, right_word_id] += 1
 
     return co_matrix
+
+
+def ppmi(C, verbose=False, eps=1e-8):
+    """ Calculate the PPMI (Positive Pointwise Mutual Information) matrix
+    """
+    M = np.zeros_like(C, dtype=np.float32)  # PPMI matrix
+    N = np.sum(C)  # Number of words in the corpus
+    S = np.sum(C, axis=0)  # Number of each word in the corpus
+    total = C.shape[0] * C.shape[1]
+    cnt = 0
+
+    for i in range(C.shape[0]):
+        for j in range(C.shape[1]):
+            pmi = np.log2(C[i, j] * N / (S[j] * S[i]) + eps)
+            M[i, j] = max(0, pmi)
+
+            if verbose:
+                # Show the progress
+                cnt += 1
+                if cnt % (total//100 + 1) == 0:
+                    print(f"{100*cnt/total}% done")
+
+    return M
 
 
 def clip_grads(grads, max_norm):

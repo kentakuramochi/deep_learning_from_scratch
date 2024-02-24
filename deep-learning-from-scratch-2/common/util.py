@@ -61,6 +61,25 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
             return
 
 
+def convert_one_hot(corpus, vocab_size):
+    """ Convert word ids to one-hot vectors
+    """
+    N = corpus.shape[0]
+
+    if corpus.ndim == 1:  # CBOW target
+        one_hot = np.zeros((N, vocab_size), dtype=np.int32)
+        for idx, word_id in enumerate(corpus):
+            one_hot[idx, word_id] = 1
+    elif corpus.ndim == 2:  # CBOW context
+        C = corpus.shape[1]
+        one_hot = np.zeros((N, C, vocab_size), dtype=np.int32)
+        for idx_0, word_ids in enumerate(corpus):
+            for idx_1, word_id in enumerate(word_ids):
+                one_hot[idx_0, idx_1, word_id] = 1
+
+    return one_hot
+
+
 def create_co_matrix(corpus, vocab_size, window_size=1):
     """ Create a co-occurrence matrix from the corpus
     """
@@ -104,6 +123,23 @@ def ppmi(C, verbose=False, eps=1e-8):
                     print(f"{100*cnt/total}% done")
 
     return M
+
+
+def create_contexts_target(corpus, window_size=1):
+    """ Create contexts and targets from the corpus
+    """
+    target = corpus[window_size:-window_size]
+    contexts = []
+
+    for idx in range(window_size, len(corpus)-window_size):
+        cs = []
+        for t in range(-window_size, window_size+1):
+            if t == 0:
+                continue
+            cs.append(corpus[idx + t])
+        contexts.append(cs)
+
+    return np.array(contexts), np.array(target)
 
 
 def clip_grads(grads, max_norm):

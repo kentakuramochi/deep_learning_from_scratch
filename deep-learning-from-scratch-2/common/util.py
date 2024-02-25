@@ -142,6 +142,24 @@ def create_contexts_target(corpus, window_size=1):
     return np.array(contexts), np.array(target)
 
 
+def to_cpu(x):
+    """ Convert cupy.ndarray to numpy.ndarray
+    """
+    import numpy
+    if type(x) == numpy.ndarray:
+        return x
+    return np.asnumpy(x)
+
+
+def to_gpu(x):
+    """ Convert numpy.ndarray to cupy.ndarray
+    """
+    import cupy
+    if type(x) == cupy.ndarray:
+        return x
+    return cupy.asarray(x)
+
+
 def clip_grads(grads, max_norm):
     """ Clip gradients with the specified maximum value
     """
@@ -154,3 +172,56 @@ def clip_grads(grads, max_norm):
     if rate < 1:
         for grad in grads:
             grad *= rate
+
+
+def analogy(a, b, c, word_to_id, id_to_word, word_matrix, top=5, answer=None):
+    """ Analogy task with using ditributed representation
+    """
+    for word in (a, b, c):
+        if word not in word_to_id:
+            print(f"{word} in not found")
+            return
+
+    print(f"\n[analogy] {a}:{b} = {c}:?")
+    a_vec, b_vec, c_vec = \
+        word_matrix[word_to_id[a]], \
+        word_matrix[word_to_id[b]], \
+        word_matrix[word_to_id[c]]
+
+    # Get a query vector: vec(b) - vec(a) + vec(c)
+    query_vec = b_vec - a_vec + c_vec
+    query_vec = normalize(query_vec)
+
+    # Calculate similarities
+    similarity = np.dot(word_matrix, query_vec)
+
+    if answer is not None:
+        print("===> {} : {}".format(
+            answer,
+            str(np.dot(word_matrix[word_to_id[answer]], query_vec))
+        ))
+
+    # Sort the similarities by descending order
+    count = 0
+    for i in (-1 * similarity).argsort():
+        if np.isnan(similarity[i]):
+            continue
+        if id_to_word[i] in (a, b, c):
+            continue
+        print(f" {id_to_word[i]}: {similarity[i]}")
+
+        count += 1
+        if count >= top:
+            return
+
+
+def normalize(x):
+    """ Normalize the input
+    """
+    if x.ndim == 2:
+        s = np.sqrt((x * x).sum(1))
+        x /= s.reshape((s.shape[0], 1))
+    elif x.ndim == 1:
+        s = np.sqrt((x * x).sum())
+        x /= s
+    return x

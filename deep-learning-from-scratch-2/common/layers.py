@@ -1,4 +1,5 @@
 from common.np import *
+from common.config import GPU
 from common.functions import softmax, cross_entropy_error
 
 
@@ -67,6 +68,8 @@ class Affine:
 
 
 class SoftmaxWithLoss:
+    """ Softmax with loss layer
+    """
     def __init__(self):
         self.params, self.grads = [], []
         self.y = None
@@ -92,3 +95,57 @@ class SoftmaxWithLoss:
         dx = dx / batch_size
 
         return dx
+
+
+class SigmoidWithLoss:
+    """ Sigmoid with loss layer
+    """
+    def __init__(self):
+        self.params, self.grads = [], []
+        self.loss = None
+        self.y = None
+        self.t = None  # Training label
+
+    def forward(self, x, t):
+        self.t = t
+        self.y = 1 / (1 + np.exp(-x))
+
+        self.loss = cross_entropy_error(np.c_[1 - self.y, self.y], self.t)
+
+        return self.loss
+
+    def backward(self, dout=1):
+        batch_size = self.t.shape[0]
+
+        dx = (self.y - self.t) * dout / batch_size
+        return dx
+
+
+class Embedding:
+    """ Embedding layer
+    """
+    def __init__(self, W):
+        self.params = [W]
+        self.grads = [np.zeros_like(W)]
+        self.idx = None
+
+    def forward(self, idx):
+        W, = self.params
+        self.idx = idx
+        out = W[idx]  # Extract rows by the indices
+        return out
+
+    def backward(self, dout):
+        dW, = self.grads
+        dW[...] = 0
+
+        if GPU:
+            # cupy.scatter_add requires cupy < 8.1,
+            # threfore use cupyx.scatter_add()
+            cpx.scatter_add(dW, self.idx, dout)
+        else:
+            # for i, word_id in enumerate(self.idx):
+            #     dW[word_id] += dout[i]
+            np.add.at(dW, self.idx, dout)
+
+        return None

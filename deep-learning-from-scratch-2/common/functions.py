@@ -1,8 +1,14 @@
 from common.np import *
 
 
+def sigmoid(x):
+    """ Sigmoid function (for TimeSigmoidWithLoss)
+    """
+    return 1 / (1 + np.exp(-x))
+
+
 def softmax(x):
-    """ Softmax function
+    """ Softmax function (for TimeSoftmaxWithLoss)
     """
     if x.ndim == 2:  # For 2-D tensor
         x = x - x.max(axis=1, keepdims=True)

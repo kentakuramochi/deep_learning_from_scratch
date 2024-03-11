@@ -10,8 +10,8 @@ class BetterRnnlm(BaseModel):
     """ RNN Language Model with LSTM,
     improved by multiple LSTMs, Dropouts and weight tying
     """
-    def __init__(self, vocab_size=10000, wordvec_size=100,
-                 hidden_size=100, dropout_ratio=0.5):
+    def __init__(self, vocab_size=10000, wordvec_size=650,
+                 hidden_size=650, dropout_ratio=0.5):
         V, D, H = vocab_size, wordvec_size, hidden_size
         rn = np.random.randn
 

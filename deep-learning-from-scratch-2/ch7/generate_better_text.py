@@ -11,7 +11,7 @@ def main():
     vocab_size = len(word_to_id)
     corpus_size = len(corpus)
 
-    model = BetterRnnlmGen(wordvec_size=650, hidden_size=650)
+    model = BetterRnnlmGen()
     model.load_params("../ch6/BetterRnnlm.pkl")  # Load pre-trained parameters
 
     # Set start/skip words

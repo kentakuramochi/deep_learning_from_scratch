@@ -23,7 +23,7 @@ def main():
     eval_rnnlm(Rnnlm())
 
     print("----- Better RNN LM -----")
-    eval_rnnlm(BetterRnnlm(wordvec_size=650, hidden_size=650))
+    eval_rnnlm(BetterRnnlm())
 
 
 if __name__ == "__main__":

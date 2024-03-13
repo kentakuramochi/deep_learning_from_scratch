@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 
-import os
+# import os
 from common.np import *
 
 
@@ -232,18 +232,19 @@ def eval_seq2seq(model, question, correct, id_to_char,
         print("Q", question)
         print("T", correct)
 
-        is_windows = os.name = "nt"
+        # It seems to cause `NotImplementedError` for Pathlib
+        # is_windows = os.name = "nt"
 
         # Print a guess with coloring
         if correct == guess:
             mark = colors['ok'] + '☑' + colors['close']
-            if is_windows:
-                mark = "O"
+            # if is_windows:
+            #     mark = "O"
             print(mark + " " + guess)
         else:
             mark = colors['fail'] + '☒' + colors['close']
-            if is_windows:
-                mark = "X"
+            #  if is_windows:
+            #      mark = "X"
             print(mark + " " + guess)
         print("---")
 

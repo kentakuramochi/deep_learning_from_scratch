@@ -8,14 +8,19 @@ from dataset import sequence
 from common.optimizer import Adam
 from common.trainer import Trainer
 from common.util import eval_seq2seq
-from seq2seq import Seq2seq
-# from peeky_seq2seq import PeekySeq2seq
+# from seq2seq import Seq2seq
+from peeky_seq2seq import PeekySeq2seq
 
 
 def main():
     # Load a dataset
     (x_train, t_train), (x_test, t_test) = sequence.load_data("addition.txt")
     char_to_id, id_to_char = sequence.get_vocab()
+
+    # Reverse the input
+    is_reverse = True
+    if is_reverse:
+        x_train, x_test = x_train[:, ::-1], x_test[:, ::-1]
 
     # Hyperparameters
     vocab_size = len(char_to_id)
@@ -26,7 +31,8 @@ def main():
     max_grad = 5.0
 
     # Model, optimizer and trainer
-    model = Seq2seq(vocab_size, wordvec_size, hidden_size)
+    # model = Seq2seq(vocab_size, wordvec_size, hidden_size)
+    model = PeekySeq2seq(vocab_size, wordvec_size, hidden_size)
     optimizer = Adam()
     trainer = Trainer(model, optimizer)
 
@@ -53,7 +59,9 @@ def main():
     plt.ylabel("accuracy")
     plt.ylim(0, 1.0)
     plt.show()
-    plt.savefig("accuracy.png")
+    # plt.savefig("accuracy.png")
+    # plt.savefig("accuracy_reversed.png")
+    plt.savefig("accuracy_reverse_and_peeky.png")
 
 
 if __name__ == "__main__":

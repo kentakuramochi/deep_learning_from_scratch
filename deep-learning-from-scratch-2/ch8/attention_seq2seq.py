@@ -21,7 +21,7 @@ class AttentionEncoder(Encoder):
 
 
 class AttentionDecoder:
-    """ Seq2seq encoder with Attention
+    """ Seq2seq decoder with Attention
     """
     def __init__(self, vocab_size, wordvec_size, hidden_size):
         V, D, H = vocab_size, wordvec_size, hidden_size
@@ -106,6 +106,117 @@ class AttentionSeq2seq(Seq2seq):
         args = vocab_size, wordvec_size, hidden_size
         self.encoder = AttentionEncoder(*args)
         self.decoder = AttentionDecoder(*args)
+        self.softmax = TimeSoftmaxWithLoss()
+
+        self.params = self.encoder.params + self.decoder.params
+        self.grads = self.encoder.grads + self.decoder.grads
+
+
+class TimeBiLSTM:
+    """ Bidirectional LSTM
+    """
+    def __init__(self, Wx1, Wh1, b1,
+                 Wx2, Wh2, b2, stateful=False):
+        self.forward_lstm = TimeLSTM(Wx1, Wh1, b1, stateful)
+        self.backward_lstm = TimeLSTM(Wx2, Wh2, b2, stateful)  # Backward path
+        self.params = self.forward_lstm.params + self.backward_lstm.params
+        self.grads = self.forward_lstm.grads + self.backward_lstm.grads
+
+    def forward(self, xs):
+        o1 = self.forward_lstm.forward(xs)
+        o2 = self.backward_lstm.forward(xs[:, ::-1])  # Reversed input
+        o2 = o2[:, ::-1]
+
+        out = np.concatenate((o1, o2), axis=2)  # Concat 2 outputs
+        return out
+
+    def backward(self, dhs):
+        H = dhs.shape[2] // 2
+        do1 = dhs[:, :, :H]
+        do2 = dhs[:, :, H:]
+
+        dxs1 = self.forward_lstm.backward(do1)
+        do2 = do2[:, ::-1]
+        dxs2 = self.backward_lstm.backward(do2)
+        dxs2 = dxs2[:, ::-1]
+        dxs = dxs1 + dxs2  # Concat 2 differentiations
+        return dxs
+
+
+class AttentionBiEncoder(AttentionEncoder):
+    """ Bidirectional seq2seq encoder
+    """
+    def __init__(self, vocab_size, wordvec_size, hidden_size):
+        V, D, H = vocab_size, wordvec_size, hidden_size
+        rn = np.random.randn
+
+        embed_W = (rn(V, D) / 100).astype("f")
+        # Weights/bias for the forward path
+        lstm_Wx1 = (rn(D, 4 * H) / np.sqrt(D)).astype("f")
+        lstm_Wh1 = (rn(H, 4 * H) / np.sqrt(H)).astype("f")
+        lstm_b1 = np.zeros(4 * H).astype("f")
+        # Weights/bias for the backward path
+        lstm_Wx2 = (rn(D, 4 * H) / np.sqrt(D)).astype("f")
+        lstm_Wh2 = (rn(H, 4 * H) / np.sqrt(H)).astype("f")
+        lstm_b2 = np.zeros(4 * H).astype("f")
+
+        self.embed = TimeEmbedding(embed_W)
+        self.lstm = TimeBiLSTM(
+            lstm_Wx1, lstm_Wh1, lstm_b1,
+            lstm_Wx2, lstm_Wh2, lstm_b2,
+            stateful=False
+        )
+
+        self.params = self.embed.params + self.lstm.params
+        self.grads = self.embed.grads + self.lstm.grads
+        self.hs = None
+
+    def forward(self, xs):
+        xs = self.embed.forward(xs)
+        hs = self.lstm.forward(xs)
+        return hs  # Return all of the hidden state vector
+
+    def backward(self, dhs):
+        dout = self.lstm.backward(dhs)
+        dout = self.embed.backward(dout)
+        return dout
+
+
+class AttentionBiDecoder(AttentionDecoder):
+    """ Bidirectional seq2seq decoder for Attention
+    """
+    def __init__(self, vocab_size, wordvec_size, hidden_size):
+        V, D, H = vocab_size, wordvec_size, hidden_size
+        rn = np.random.randn
+
+        embed_W = (rn(V, D) / 100).astype("f")
+        lstm_Wx = (rn(D, 2 * 4 * H) / np.sqrt(D)).astype("f")
+        lstm_Wh = (rn(2 * H, 2 * 4 * H) / np.sqrt(2 * H)).astype("f")
+        lstm_b = np.zeros(2 * 4 * H).astype("f")
+        affine_W = (rn(2*2*H, V) / np.sqrt(2*2*H)).astype("f")
+        affine_b = np.zeros(V).astype("f")
+
+        self.embed = TimeEmbedding(embed_W)
+        self.lstm = TimeLSTM(lstm_Wx, lstm_Wh, lstm_b, stateful=True)
+        self.attention = TimeAttention()
+        self.affine = TimeAffine(affine_W, affine_b)
+        layers = [
+            self.embed, self.lstm, self.attention, self.affine
+        ]
+
+        self.params, self.grads = [], []
+        for layer in layers:
+            self.params += layer.params
+            self.grads += layer.grads
+
+
+class AttentionBiSeq2seq(AttentionSeq2seq):
+    """ Bidirectional seq2seq with Attention
+    """
+    def __init__(self, vocab_size, wordvec_size, hidden_size):
+        args = vocab_size, wordvec_size, hidden_size
+        self.encoder = AttentionBiEncoder(*args)
+        self.decoder = AttentionBiDecoder(*args)
         self.softmax = TimeSoftmaxWithLoss()
 
         self.params = self.encoder.params + self.decoder.params

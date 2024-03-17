@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 
 from common.time_layers import *
-from seq2seq import Seq2seq, Encoder
+from ch7.seq2seq import Seq2seq, Encoder
 
 
 class PeekyDecoder:

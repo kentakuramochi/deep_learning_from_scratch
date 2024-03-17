@@ -11,7 +11,7 @@ def main():
     corpus_size = len(corpus)
 
     model = RnnlmGen()
-    model.load_params("../ch6/Rnnlm.pkl")  # Load pre-trained parameters
+    model.load_params("../ch06/Rnnlm.pkl")  # Load pre-trained parameters
 
     # Set start/skip words
     start_word = "you"

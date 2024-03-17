@@ -3,7 +3,7 @@ sys.path.append("..")
 
 from common.np import *
 from common.layers import Embedding
-from ch4.negative_sampling_layer import NegativeSamplingLoss
+from ch04.negative_sampling_layer import NegativeSamplingLoss
 
 
 class CBOW:

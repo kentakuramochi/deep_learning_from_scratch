@@ -4,4 +4,6 @@ __pycache__/
 *.pkl
 *.npy
 
-deep-learning-from-scratch-2/dataset/ptb.*.txt
+book_1/dataset/
+book_2/dataset/ptb.*.txt
+book_2/*.txt

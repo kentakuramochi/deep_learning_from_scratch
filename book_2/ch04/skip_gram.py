@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 
 from common.layers import *
-from ch4.negative_sampling_layer import NegativeSamplingLoss
+from ch04.negative_sampling_layer import NegativeSamplingLoss
 
 
 class SkipGram:

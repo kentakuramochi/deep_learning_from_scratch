@@ -3,8 +3,8 @@ sys.path.append("..")
 
 import numpy as np
 from common.functions import softmax
-from ch6.rnnlm import Rnnlm
-from ch6.better_rnnlm import BetterRnnlm
+from ch06.rnnlm import Rnnlm
+from ch06.better_rnnlm import BetterRnnlm
 
 
 class RnnlmGen(Rnnlm):

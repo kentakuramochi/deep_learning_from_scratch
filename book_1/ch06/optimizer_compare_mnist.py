@@ -10,7 +10,7 @@ sys.path.append(os.pardir)
 import matplotlib.pyplot as plt
 import numpy as np
 from dataset.mnist import load_mnist
-from chap5.two_layer_net import TwoLayerNet
+from ch05.two_layer_net import TwoLayerNet
 from common.optimizer import *
 
 def smooth_curve(x):

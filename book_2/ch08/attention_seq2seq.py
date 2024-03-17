@@ -2,8 +2,8 @@ import sys
 sys.path.append("..")
 
 from common.time_layers import *
-from ch7.seq2seq import Encoder, Seq2seq
-from ch8.attention_layer import TimeAttention
+from ch07.seq2seq import Encoder, Seq2seq
+from ch08.attention_layer import TimeAttention
 
 
 class AttentionEncoder(Encoder):

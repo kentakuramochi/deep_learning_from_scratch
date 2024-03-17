@@ -12,7 +12,7 @@ def main():
     corpus_size = len(corpus)
 
     model = BetterRnnlmGen()
-    model.load_params("../ch6/BetterRnnlm.pkl")  # Load pre-trained parameters
+    model.load_params("../ch06/BetterRnnlm.pkl")  # Load pre-trained parameters
 
     # Set start/skip words
     start_word = "you"

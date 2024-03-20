@@ -6,6 +6,8 @@
 （[サポートサイト（GitHub）](https://github.com/oreilly-japan/deep-learning-from-scratch)）
 - `book_2`: 『ゼロから作るDeep Learning ❷ ―自然言語処理編』
 （[サポートサイト（GitHub）](https://github.com/oreilly-japan/deep-learning-from-scratch-2)）
+- `book_3`: 『ゼロから作る Deep Learning ❸ ―フレームワーク編』
+（[サポートサイト（GitHub）](https://github.com/oreilly-japan/deep-learning-from-scratch-3)）
 
 ## ライセンス
 

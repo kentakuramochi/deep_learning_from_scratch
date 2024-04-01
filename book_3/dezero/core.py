@@ -64,6 +64,9 @@ class Variable:
         self.creator = func
         self.generation = func.generation + 1
 
+    def cleargrad(self):
+        self.grad = None
+
     def backward(self, retain_grad=False, create_graph=False):
         if self.grad is None:
             self.grad = Variable(np.ones_like(self.data))
@@ -82,7 +85,7 @@ class Variable:
         # Call backward method of each Function continuously
         while funcs:
             f = funcs.pop()
-            gys = [output().grad for output in f.outputs]
+            gys = [output().grad for output in f.outputs]  # output is weakref
 
             with using_config("enable_backprop", create_graph):
                 gxs = f.backward(*gys)
@@ -101,9 +104,6 @@ class Variable:
                 if not retain_grad:
                     for y in f.outputs:
                         y().grad = None  # y is weakref
-
-    def cleargrad(self):
-        self.grad = None
 
 
 def as_array(x):
@@ -234,7 +234,7 @@ class Pow(Function):
         return y
 
     def backward(self, gy):
-        x = self.inputs
+        (x,) = self.inputs
         c = self.c
         gx = c * x ** (c - 1) * gy
         return gx

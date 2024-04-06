@@ -79,6 +79,19 @@ def plot_dot_graph(output, verbose=True, to_file="graph.png"):
         subprocess.run(cmd, shell=True)
 
 
+# Sum elements along axes to output an array of a given shape
+def sum_to(x, shape):
+    ndim = len(shape)
+    lead = x.ndim - ndim
+    lead_axis = tuple(range(lead))
+
+    axis = tuple([i + lead for i, sx in enumerate(shape) if sx == 1])
+    y = x.sum(lead_axis + axis, keepdims=True)
+    if lead > 0:
+        y = y.squeeze(lead_axis)
+    return y
+
+
 # Reshape gradient appropriately for dezero.funcions.sum's backward
 def reshape_sum_backward(gy, x_shape, axis, keepdims):
     ndim = len(x_shape)

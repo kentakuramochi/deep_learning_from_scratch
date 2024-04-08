@@ -45,3 +45,14 @@ for i in range(iters):
     W.data -= lr * W.grad.data
     b.data -= lr * b.grad.data
     print(W, b, loss)
+
+
+# Plot samples and the prediction
+fig, ax = plt.subplots()
+ax.scatter(x, y)
+
+x_plot = np.linspace(0, 1, 100)
+ax.plot(x_plot, (np.dot(np.expand_dims(x_plot, axis=1), W.data) + b.data), c="r")
+
+plt.show()
+plt.savefig(os.path.join(os.path.dirname(__file__), "output", "linear_regression.png"))

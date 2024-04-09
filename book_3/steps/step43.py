@@ -53,3 +53,14 @@ for i in range(iters):
 
     if i % 1000 == 0:  # Print every 1000 iterations
         print(loss)
+
+
+# Plot samples and the prediction
+fig, ax = plt.subplots()
+ax.scatter(x, y)
+x_plot = np.linspace(0, 1, 100)
+y_plot = predict(np.expand_dims(x_plot, axis=1)).data
+ax.plot(x_plot, y_plot, c="r")
+
+plt.show()
+plt.savefig(os.path.join(os.path.dirname(__file__), "output", "sin_regression.png"))

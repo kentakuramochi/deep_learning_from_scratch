@@ -121,5 +121,5 @@ def logsumexp(x, axis=1):
     np.exp(y, out=y)
     s = y.sum(axis=axis, keepdims=True)
     np.log(s, out=s)
-    m += 2
+    m += s
     return m

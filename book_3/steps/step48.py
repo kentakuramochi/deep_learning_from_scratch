@@ -6,11 +6,11 @@ if "__file__" in globals():
 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 import dezero
-from dezero import optimizers
 import dezero.functions as F
 from dezero.models import MLP
-import matplotlib.pyplot as plt
+from dezero import optimizers
 
 
 def plot_decision_boundary(x, y, t, model, output_path):

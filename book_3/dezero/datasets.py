@@ -19,12 +19,12 @@ class Dataset:
         self.prepare()
 
     def __getitem__(self, index):
-        assert np.isscalar(index)
+        assert np.isscalar(index)  # Index must be the scalar, slice is not supported
         if self.label is None:
             return self.transform(self.data[index]), None
         else:
-            return self.transform(
-                self.data[index], self.target_transform(self.lable[index])
+            return self.transform(self.data[index]), self.target_transform(
+                self.label[index]
             )
 
     def __len__(self):

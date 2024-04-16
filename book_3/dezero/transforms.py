@@ -1,6 +1,20 @@
 import numpy as np
 
 
+class Compose:
+    """Compose several transforms"""
+
+    def __init__(self, transforms=[]):
+        self.transforms = transforms
+
+    def __call__(self, img):
+        if not self.transforms:
+            return img
+        for t in self.transforms:
+            img = t(img)
+        return img
+
+
 class Normalize:
     """Normalize a ndarray with specified mean and standard deviation"""
 
@@ -22,3 +36,23 @@ class Normalize:
             rshape[0] = len(array) if len(self.std) == 1 else len(self.std)
             std = np.array(self.std, dtype=array.dtype).reshape(*rshape)
         return (array - mean) / std
+
+
+class Flatten:
+    """Flatten a ndarray"""
+
+    def __call__(self, array):
+        return array.flatten()
+
+
+class AsType:
+    """Convert data type"""
+
+    def __init__(self, dtype=np.float32):
+        self.dtype = dtype
+
+    def __call__(self, array):
+        return array.astype(self.dtype)
+
+
+ToFloat = AsType

@@ -22,6 +22,7 @@ else:
     from dezero.models import Model
 
     import dezero.datasets
+    import dezero.cuda
     import dezero.transforms
 
 setup_variable()

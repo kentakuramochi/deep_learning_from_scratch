@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+from dezero import cuda
+
 
 class Optimizer:
     def __init__(self):
@@ -52,7 +54,8 @@ class MomentumSGD(Optimizer):
         # Create an individual momentum v for each parameter
         v_key = id(param)
         if v_key not in self.vs:
-            self.vs[v_key] = np.zeros_like(param.data)
+            xp = cuda.get_array_module(param.data)
+            self.vs[v_key] = xp.zeros_like(param.data)
 
         # Update with the momentum
         v = self.vs[v_key]
@@ -83,10 +86,11 @@ class Adam(Optimizer):
         return self.alpha * math.sqrt(fix2) / fix1
 
     def update_one(self, param):
+        xp = cuda.get_array_module(param)
         key = id(param)
         if key not in self.ms:
-            self.ms[key] = np.zeros_like(param.data)
-            self.vs[key] = np.zeros_like(param.data)
+            self.ms[key] = xp.zeros_like(param.data)
+            self.vs[key] = xp.zeros_like(param.data)
 
         m, v = self.ms[key], self.vs[key]
         beta1, beta2, eps = self.beta1, self.beta2, self.eps
@@ -94,4 +98,4 @@ class Adam(Optimizer):
 
         m += (1 - beta1) * (grad - m)
         v += (1 - beta2) * (grad * grad - v)
-        param.data -= self.lr * m / (np.sqrt(v) + eps)
+        param.data -= self.lr * m / (xp.sqrt(v) + eps)

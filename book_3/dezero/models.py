@@ -5,6 +5,11 @@ import dezero.functions as F
 import dezero.layers as L
 
 
+# =============================================================================
+# Network model
+# =============================================================================
+
+
 class Model(Layer):
     def plot(self, *inputs, to_file="model.png"):
         y = self.forward(*inputs)

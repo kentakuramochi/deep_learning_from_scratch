@@ -1,7 +1,11 @@
 import math
-import numpy as np
 
 from dezero import cuda
+
+
+# =============================================================================
+# Optimizer (base class)
+# =============================================================================
 
 
 class Optimizer:
@@ -31,6 +35,11 @@ class Optimizer:
     # Add a hook for the preprocess
     def add_hook(self, f):
         self.hooks.append(f)
+
+
+# =============================================================================
+# Optimizer implementations
+# =============================================================================
 
 
 # Stochastic gradient descent (SGD)

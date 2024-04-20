@@ -24,7 +24,7 @@ class Function:
         y = self.forward(x)
         output = Variable(y)
         output.set_creator(self)  # Store a creator of the output
-                                  # "Define-by-Run"
+        # "Define-by-Run"
         self.input = input
         self.output = output  # Save the output
         return output

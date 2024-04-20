@@ -6,6 +6,11 @@ import numpy as np
 from tempfile import TemporaryDirectory
 
 
+# =============================================================================
+# Visualization for computational graph
+# =============================================================================
+
+
 def _dot_var(v, verbose=False):
     # Format string for a Variable node
     dot_var = '{} [label="{}", color=orange, style=filled]\n'
@@ -81,6 +86,11 @@ def plot_dot_graph(output, verbose=True, to_file="graph.png"):
         subprocess.run(cmd, shell=True)
 
 
+# =============================================================================
+# Utility functions for NumPy
+# =============================================================================
+
+
 # Sum elements along axes to output an array of a given shape
 def sum_to(x, shape):
     ndim = len(shape)
@@ -124,6 +134,11 @@ def logsumexp(x, axis=1):
     np.log(s, out=s)
     m += s
     return m
+
+
+# =============================================================================
+# Download functions
+# =============================================================================
 
 
 def show_progress(block_num, block_size, total_size):

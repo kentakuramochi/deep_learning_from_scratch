@@ -15,6 +15,11 @@ class Compose:
         return img
 
 
+# =============================================================================
+# Transforms for NumPy ndarray
+# =============================================================================
+
+
 class Normalize:
     """Normalize a ndarray with specified mean and standard deviation"""
 

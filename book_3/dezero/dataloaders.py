@@ -1,5 +1,4 @@
 import math
-import random
 import numpy as np
 
 from dezero import cuda

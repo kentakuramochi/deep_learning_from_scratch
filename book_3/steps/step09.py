@@ -75,6 +75,7 @@ class Exp(Function):
 
 # Wrapper functions
 
+
 def square(x):
     return Square()(x)
 

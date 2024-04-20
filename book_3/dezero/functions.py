@@ -6,6 +6,11 @@ from dezero import utils
 from dezero import cuda
 
 
+# =============================================================================
+# Basic functions
+# =============================================================================
+
+
 class Sin(Function):
     def forward(self, x):
         xp = cuda.get_array_module(x)
@@ -86,6 +91,11 @@ def log(x):
     return Log()(x)
 
 
+# =============================================================================
+# Tensor operations
+# =============================================================================
+
+
 class Reshape(Function):
     def __init__(self, shape):
         self.shape = shape
@@ -129,6 +139,48 @@ def transpose(x, axes=None):
     return Transpose(axes)(x)
 
 
+class GetItem(Function):
+    def __init__(self, slices):
+        self.slices = slices
+
+    def forward(self, x):
+        y = x[self.slices]
+        return y
+
+    def backward(self, gy):
+        (x,) = self.inputs
+        f = GetItemGrad(self.slices, x.shape)
+        return f(gy)
+
+
+def get_item(x, slices):
+    """
+    Example:
+        x = Variable(np.array([[1, 2, 3], [4, 5, 6]]))
+        y = F.get_items(x, 1)
+        print(y)  # variable([4 5 6])
+        y.backward()
+        print(x.grad)  # variable([[0. 0. 0.]
+                                   [1. 1. 1.]])
+    """
+    return GetItem(slices)(x)
+
+
+class GetItemGrad(Function):
+    def __init__(self, slices, in_shape):
+        self.slices = slices
+        self.in_shape = in_shape
+
+    def forward(self, gy):
+        xp = cuda.get_array_module(gy)
+        gx = xp.zeros(self.in_shape)
+        xp.add.at(gx, self.slices, gy)
+        return gx
+
+    def backward(self, ggx):
+        return get_item(ggx, self.slices)
+
+
 class Sum(Function):
     def __init__(self, axis, keepdims):
         self.axis = axis
@@ -147,6 +199,26 @@ class Sum(Function):
 
 def sum(x, axis=None, keepdims=False):
     return Sum(axis, keepdims)(x)
+
+
+class SumTo(Function):
+    def __init__(self, shape):
+        self.shape = shape
+
+    def forward(self, x):
+        self.x_shape = x.shape
+        y = utils.sum_to(x, self.shape)
+        return y
+
+    def backward(self, gy):
+        gx = broadcast_to(gy, self.x_shape)
+        return gx
+
+
+def sum_to(x, shape):
+    if x.shape == shape:
+        return as_variable(x)
+    return SumTo(shape)(x)
 
 
 class BroadcastTo(Function):
@@ -168,26 +240,6 @@ def broadcast_to(x, shape):
     if x.shape == shape:
         return as_variable(x)
     return BroadcastTo(shape)(x)
-
-
-class SumTo(Function):
-    def __init__(self, shape):
-        self.shape = shape
-
-    def forward(self, x):
-        self.x_shape = x.shape
-        y = utils.sum_to(x, self.shape)
-        return y
-
-    def backward(self, gy):
-        gx = broadcast_to(gy, self.x_shape)
-        return gx
-
-
-def sum_to(x, shape):
-    if x.shape == shape:
-        return as_variable(x)
-    return SumTo(shape)(x)
 
 
 class MatMul(Function):
@@ -236,6 +288,11 @@ def linear_simple(x, W, b=None):
     return y
 
 
+# =============================================================================
+# Activation functions
+# =============================================================================
+
+
 class Sigmoid(Function):
     def forward(self, x):
         xp = cuda.get_array_module(x)
@@ -250,13 +307,6 @@ class Sigmoid(Function):
 
 def sigmoid(x):
     return Sigmoid()(x)
-
-
-def softmax_simple(x, axis=1):
-    x = as_variable(x)
-    y = exp(x)
-    sum_y = sum(y, axis=axis, keepdims=True)
-    return y / sum_y
 
 
 class ReLU(Function):
@@ -299,16 +349,35 @@ def softmax(x, axis=1):
     return Softmax(axis)(x)
 
 
-def softmax_cross_entropy_simple(x, t):
-    x, t = as_variable(x), as_variable(t)
-    N = x.shape[0]
+def softmax_simple(x, axis=1):
+    x = as_variable(x)
+    y = exp(x)
+    sum_y = sum(y, axis=axis, keepdims=True)
+    return y / sum_y
 
-    p = softmax(x)
-    p = clip(p, 1e-15, 1.0)  # Avoid log(0)
-    log_p = log(p)
-    tlog_p = log_p[np.arange(N), t.data]
-    y = -1 * sum(tlog_p) / N
-    return y
+
+# =============================================================================
+# Loss functions
+# =============================================================================
+
+
+class MeanSquaredError(Function):
+    def forward(self, x0, x1):
+        diff = x0 - x1
+        y = (diff**2).sum() / len(diff)
+        return y
+
+    def backward(self, gy):
+        x0, x1 = self.inputs
+        diff = x0 - x1
+        gy = broadcast_to(gy, diff.shape)
+        gx0 = gy * diff * (2.0 / len(diff))
+        gx1 = -gx0
+        return gx0, gx1
+
+
+def mean_squared_error(x0, x1):
+    return MeanSquaredError()(x0, x1)
 
 
 class SoftmaxCrossEntropy(Function):
@@ -338,65 +407,30 @@ def softmax_cross_entropy(x, t):
     return SoftmaxCrossEntropy()(x, t)
 
 
-class MeanSquaredError(Function):
-    def forward(self, x0, x1):
-        diff = x0 - x1
-        y = (diff**2).sum() / len(diff)
-        return y
+def softmax_cross_entropy_simple(x, t):
+    x, t = as_variable(x), as_variable(t)
+    N = x.shape[0]
 
-    def backward(self, gy):
-        x0, x1 = self.inputs
-        diff = x0 - x1
-        gy = broadcast_to(gy, diff.shape)
-        gx0 = gy * diff * (2.0 / len(diff))
-        gx1 = -gx0
-        return gx0, gx1
+    p = softmax(x)
+    p = clip(p, 1e-15, 1.0)  # Avoid log(0)
+    log_p = log(p)
+    tlog_p = log_p[np.arange(N), t.data]
+    y = -1 * sum(tlog_p) / N
+    return y
 
 
-def mean_squared_error(x0, x1):
-    return MeanSquaredError()(x0, x1)
+# =============================================================================
+# Utility operations
+# =============================================================================
 
 
-class GetItem(Function):
-    def __init__(self, slices):
-        self.slices = slices
+def accuracy(y, t):
+    y, t = as_variable(y), as_variable(t)
 
-    def forward(self, x):
-        y = x[self.slices]
-        return y
-
-    def backward(self, gy):
-        (x,) = self.inputs
-        f = GetItemGrad(self.slices, x.shape)
-        return f(gy)
-
-
-def get_item(x, slices):
-    """
-    Example:
-        x = Variable(np.array([[1, 2, 3], [4, 5, 6]]))
-        y = F.get_items(x, 1)
-        print(y)  # variable([4 5 6])
-        y.backward()
-        print(x.grad)  # variable([[0. 0. 0.]
-                                   [1. 1. 1.]])
-    """
-    return GetItem(slices)(x)
-
-
-class GetItemGrad(Function):
-    def __init__(self, slices, in_shape):
-        self.slices = slices
-        self.in_shape = in_shape
-
-    def forward(self, gy):
-        xp = cuda.get_array_module(gy)
-        gx = xp.zeros(self.in_shape)
-        xp.add.at(gx, self.slices, gy)
-        return gx
-
-    def backward(self, ggx):
-        return get_item(ggx, self.slices)
+    pred = y.data.argmax(axis=1).reshape(t.shape)
+    result = pred == t.data  # True/False
+    acc = result.mean()
+    return Variable(as_array(acc))
 
 
 class Clip(Function):
@@ -418,12 +452,3 @@ class Clip(Function):
 
 def clip(x, x_min, x_max):
     return Clip(x_min, x_max)(x)
-
-
-def accuracy(y, t):
-    y, t = as_variable(y), as_variable(t)
-
-    pred = y.data.argmax(axis=1).reshape(t.shape)
-    result = pred == t.data  # True/False
-    acc = result.mean()
-    return Variable(as_array(acc))

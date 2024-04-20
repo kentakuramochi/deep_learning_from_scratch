@@ -5,6 +5,11 @@ import weakref
 import dezero
 
 
+# =============================================================================
+# Config
+# =============================================================================
+
+
 class Config:
     enable_backprop = True  # Enable the backpropagation
 
@@ -31,7 +36,14 @@ except ImportError:
     array_types = np.ndarray
 
 
+# ========================================
+# Variable and Function
+# ========================================
+
+
 class Variable:
+    """Variable of Dezero"""
+
     __array_priority__ = 200  # Set high priority for __r***__ special methods
 
     def __init__(self, data, name=None):
@@ -140,10 +152,8 @@ class Variable:
             self.data = dezero.cuda.as_cupy(self.data)
 
 
-def as_array(x, array_module=np):
-    if np.isscalar(x):
-        return array_module.array(x)
-    return x
+class Parameter(Variable):
+    pass
 
 
 def as_variable(obj):
@@ -152,8 +162,10 @@ def as_variable(obj):
     return Variable(obj)
 
 
-class Parameter(Variable):
-    pass
+def as_array(x, array_module=np):
+    if np.isscalar(x):
+        return array_module.array(x)
+    return x
 
 
 class Function:
@@ -179,6 +191,11 @@ class Function:
 
     def backward(self, gys):
         raise NotImplementedError
+
+
+# =============================================================================
+# Basic arithmetic operations and operator overloading
+# =============================================================================
 
 
 class Add(Function):

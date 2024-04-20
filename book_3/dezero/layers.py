@@ -1,5 +1,6 @@
-import numpy as np
+import os
 import weakref
+import numpy as np
 
 import dezero.functions as F
 from dezero import cuda
@@ -22,6 +23,39 @@ class Layer:
         self.inputs = [weakref.ref(x) for x in inputs]
         self.outputs = [weakref.ref(y) for y in outputs]
         return outputs if len(outputs) > 1 else outputs[0]
+
+    def _flatten_params(self, params_dict, parent_key=""):
+        for name in self._params:
+            obj = self.__dict__[name]
+            key = parent_key + "/" + name if parent_key else name
+
+            if isinstance(obj, Layer):
+                obj._flatten_params(params_dict, key)
+            else:
+                params_dict[key] = obj
+
+    def save_weights(self, path):
+        self.to_cpu()  # Data is on the main memory
+
+        params_dict = {}
+        self._flatten_params(params_dict)
+        array_dict = {
+            key: param.data for key, param in params_dict.items() if param is not None
+        }
+
+        try:
+            np.savez_compressed(path, **array_dict)
+        except (Exception, KeyboardInterrupt) as e:
+            if os.path.exists(path):
+                os.remove(path)
+            raise
+
+    def load_weights(self, path):
+        npz = np.load(path)
+        params_dict = {}
+        self._flatten_params(params_dict)
+        for key, param in params_dict.items():
+            param.data = npz[key]
 
     def forward(self, inputs):
         raise NotImplementedError()

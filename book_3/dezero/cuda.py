@@ -27,7 +27,7 @@ def as_numpy(x):
 
     if np.isscalar(x):
         return np.array(x)
-    elif isinstance(x, np.npdarray):
+    elif isinstance(x, np.ndarray):
         return x
     return cp.asnumpy(x)
 

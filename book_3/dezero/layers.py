@@ -2,6 +2,7 @@ import numpy as np
 import weakref
 
 import dezero.functions as F
+from dezero import cuda
 from dezero.core import Parameter
 
 
@@ -63,15 +64,16 @@ class Linear(Layer):
         else:
             self.b = Parameter(np.zeros(out_size, dtype=dtype), name="b")
 
-    def _init_W(self):
+    def _init_W(self, xp=np):
         I, O = self.in_size, self.out_size
-        W_data = np.random.randn(I, O).astype(self.dtype) * np.sqrt(1 / I)
+        W_data = xp.random.randn(I, O).astype(self.dtype) * np.sqrt(1 / I)
         self.W.data = W_data
 
     def forward(self, x):
         if self.W.data is None:  # Initialize when forwarding
             self.in_size = x.shape[1]
-            self._init_W()
+            xp = cuda.get_array_module(x)
+            self._init_W(xp)
 
         y = F.linear(x, self.W, self.b)
         return y

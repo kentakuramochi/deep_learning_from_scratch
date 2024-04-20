@@ -56,11 +56,13 @@ def tanh(x):
 
 class Exp(Function):
     def forward(self, x):
-        return np.exp(x)
+        xp = cuda.get_array_module(x)
+        y = xp.exp(x)
+        return y
 
     def backward(self, gy):
-        x = self.inputs[0].data
-        gx = np.exp(x) * gy
+        y = self.outputs[0]()
+        gx = y * gy
         return gx
 
 

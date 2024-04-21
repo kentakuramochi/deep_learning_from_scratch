@@ -1,9 +1,7 @@
 import numpy as np
-from dezero.core import Variable
-from dezero.core import Function
-from dezero.core import as_array, as_variable
-from dezero import utils
-from dezero import cuda
+import dezero
+from dezero.core import Variable, Function, as_array, as_variable
+from dezero import cuda, utils
 
 
 # =============================================================================
@@ -431,6 +429,20 @@ def accuracy(y, t):
     result = pred == t.data  # True/False
     acc = result.mean()
     return Variable(as_array(acc))
+
+
+def dropout(x, dropout_ratio=0.5):
+    x = as_variable(x)
+
+    if dezero.Config.train:
+        # Inverted dropout: scaling while the training
+        xp = cuda.get_array_module(x)
+        mask = xp.random.rand(*x.shape) > dropout_ratio
+        scale = xp.array(1.0 - dropout_ratio).astype(x.dtype)
+        y = x * mask / scale
+        return y
+    else:
+        return x
 
 
 class Clip(Function):

@@ -464,3 +464,17 @@ class Clip(Function):
 
 def clip(x, x_min, x_max):
     return Clip(x_min, x_max)(x)
+
+
+# =============================================================================
+# conv2d/col2im/im2col/basic math functions
+# =============================================================================
+from dezero.functions_conv import im2col
+
+from dezero.core import add
+from dezero.core import sub
+from dezero.core import rsub
+from dezero.core import mul
+from dezero.core import div
+from dezero.core import neg
+from dezero.core import pow

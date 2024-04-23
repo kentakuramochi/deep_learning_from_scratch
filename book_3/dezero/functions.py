@@ -470,6 +470,7 @@ def clip(x, x_min, x_max):
 # conv2d/col2im/im2col/basic math functions
 # =============================================================================
 from dezero.functions_conv import im2col
+from dezero.functions_conv import col2im
 
 from dezero.core import add
 from dezero.core import sub

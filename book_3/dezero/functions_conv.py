@@ -1,7 +1,31 @@
 import numpy as np
+
 from dezero import cuda
-from dezero.core import Function
+from dezero.core import Function, as_variable
+from dezero.functions import linear
 from dezero.utils import pair, get_conv_outsize
+
+
+# =============================================================================
+# conv2d_simple
+# =============================================================================
+def conv2d_simple(x, W, b=None, stride=1, pad=0):
+    x, W = as_variable(x), as_variable(W)
+
+    Weight = W  # Distinguish from "W" for the width
+    N, C, H, W = x.shape
+    OC, C, KH, KW = Weight.shape
+    SH, SW = pair(stride)
+    PH, PW = pair(pad)
+    OH = get_conv_outsize(H, KH, SH, PH)
+    OW = get_conv_outsize(W, KW, SW, PW)
+
+    col = im2col(x, (KH, KW), stride, pad, to_matrix=True)  # Expand an input
+    Weight = Weight.reshape(OC, -1).transpose()  # Expand a kernel
+    t = linear(col, Weight, b)  # Multiply-accumulate
+    y = t.reshape(N, OH, OW, OC).transpose(0, 3, 1, 2)  # Convert to a tensor
+
+    return y
 
 
 # =============================================================================
@@ -60,7 +84,7 @@ class Col2Im(Function):
 
 
 def col2im(x, input_shape, kernel_size, stride=1, pad=0, to_matrix=True):
-    return Col2Im(input_shape, kernel_size, stride, to_matrix)(x)
+    return Col2Im(input_shape, kernel_size, stride, pad, to_matrix)(x)
 
 
 # =============================================================================

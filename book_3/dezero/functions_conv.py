@@ -3,11 +3,11 @@ import numpy as np
 from dezero import cuda
 from dezero.core import Function, as_variable
 from dezero.functions import linear
-from dezero.utils import pair, get_conv_outsize
+from dezero.utils import pair, get_conv_outsize, get_deconv_outsize
 
 
 # =============================================================================
-# conv2d_simple
+# conv2d_simple/pooling_simple
 # =============================================================================
 def conv2d_simple(x, W, b=None, stride=1, pad=0):
     x, W = as_variable(x), as_variable(W)
@@ -24,6 +24,24 @@ def conv2d_simple(x, W, b=None, stride=1, pad=0):
     Weight = Weight.reshape(OC, -1).transpose()  # Expand a kernel
     t = linear(col, Weight, b)  # Multiply-accumulate
     y = t.reshape(N, OH, OW, OC).transpose(0, 3, 1, 2)  # Convert to a tensor
+
+    return y
+
+
+def pooling_simple(x, kernel_size, stride=1, pad=0):
+    x = as_variable(x)
+
+    N, C, H, W = x.shape
+    KH, KW = pair(kernel_size)
+    PH, PW = pair(pad)
+    SH, SW = pair(stride)
+    OH = get_conv_outsize(H, KH, SH, PH)
+    OW = get_conv_outsize(W, KW, SW, PW)
+
+    col = im2col(x, kernel_size, stride, pad, to_matrix=True)
+    col = col.reshape(-1, KH * KW)
+    y = col.max(axis=1)
+    y = y.reshape(N, OH, OW, C).transpose(0, 3, 1, 2)
 
     return y
 
@@ -73,13 +91,46 @@ def conv2d(x, W, b=None, stride=1, pad=0):
 # Deconvolution (transposed convolution)
 class Deconv2d(Function):
     def __init__(self, stride=1, pad=0, outsize=None):
-        raise NotImplementedError
+        super().__init__()
+        self.stride = pair(stride)
+        self.pad = pair(pad)
+        self.outsize = outsize
 
     def forward(self, x, W, b):
-        raise NotImplementedError
+        xp = cuda.get_array_module(x)
+
+        Weight = W
+        SH, SW = self.stride
+        PH, PW = self.pad
+        C, OC, KH, KW = Weight.shape
+        N, C, H, W = x.shape
+        if self.outsize is None:
+            out_h = get_deconv_outsize(H, KH, SH, PH)
+            out_w = get_deconv_outsize(W, KW, SW, PW)
+        else:
+            out_h, out_w = pair(self.outsize)
+        img_shape = (N, OC, out_h, out_w)
+
+        gcol = xp.tensordot(Weight, x, (0, 1))
+        gcol = xp.rollaxis(gcol, 3)
+        y = col2im_array(
+            gcol, img_shape, (KH, KW), self.stride, self.pad, to_matrix=False
+        )
+        if b is not None:
+            self.no_bias = True
+            y += b.reshape((1, b.size, 1, 1))
+        return y
 
     def backward(self, gy):
-        return NotImplementedError
+        x, W, b = self.inputs
+
+        gx = conv2d(gy, W, b=None, stride=self.stride, pad=self.pad)
+        f = Conv2DGradW(self)
+        gW = f(gy, x)
+        gb = None
+        if b.data is not None:
+            gb = gy.sum(axis=(0, 2, 3))
+        return gx, gW, gb
 
 
 def deconv2d(x, W, b=None, stride=1, pad=0, outsize=None):
@@ -110,6 +161,88 @@ class Conv2DGradW(Function):
         gx = deconv2d(gy, gW, stride=self.stride, pad=self.pad, outsize=(xh, xw))
         ggy = conv2d(x, gW, stride=self.stride, pad=self.pad)
         return gx, ggy
+
+
+# =============================================================================
+# pooling (max-pooling)
+# =============================================================================
+class Pooling(Function):
+    def __init__(self, kernel_size, stride=1, pad=0):
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.pad = pad
+
+    def forward(self, x):
+        col = im2col_array(x, self.kernel_size, self.stride, self.pad, to_matrix=False)
+        N, C, KH, KW, OH, OW = col.shape
+        col = col.reshape(N, C, KH * KW, OH, OW)
+        self.indexes = col.argmax(axis=2)
+        y = col.max(axis=2)
+        return y
+
+    def backward(self, gy):
+        return Pooling2DGrad(self)(gy)
+
+
+class Pooling2DGrad(Function):
+    def __init__(self, mpool2d):
+        self.mpool2d = mpool2d
+        self.kernel_size = mpool2d.kernel_size
+        self.stride = mpool2d.stride
+        self.pad = mpool2d.pad
+        self.input_shape = mpool2d.inputs[0].shape
+        self.dtype = mpool2d.inputs[0].dtype
+        self.indexes = mpool2d.indexes
+
+    def forward(self, gy):
+        xp = cuda.get_array_module(gy)
+
+        N, C, OH, OW = gy.shape
+        N, C, H, W = self.input_shape
+        KH, KW = pair(self.kernel_size)
+
+        gcol = xp.zeros((N * C * OH * OW * KH * KW), dtype=self.dtype)
+        indexes = self.indexes.ravel() + xp.arange(
+            0, self.indexes.size * KH * KW, KH * KW
+        )
+
+        gcol[indexes] = gy.ravel()
+        gcol = gcol.reshape(N, C, OH, OW, KH, KW)
+        gcol = xp.swapaxes(gcol, 2, 4)
+        gcol = xp.swapaxes(gcol, 3, 5)
+
+        gx = col2im_array(
+            gcol, (N, C, H, W), self.kernel_size, self.stride, self.pad, to_matrix=False
+        )
+        return gx
+
+    def backward(self, ggx):
+        f = Pooling2DWithIndexes(self.mpool2d)
+        return f(ggx)
+
+
+class Pooling2DWithIndexes(Function):
+    def __init__(self, mpool2d):
+        self.kernel_size = mpool2d.kernel_size
+        self.stride = mpool2d.stride
+        self.pad = mpool2d.pad
+        self.input_shape = mpool2d.inputs[0].shape
+        self.dtype = mpool2d.inputs[0].dtype
+        self.indexes = mpool2d.indexes
+
+    def forward(self, x):
+        col = im2col_array(x, self.kernel_size, self.stride, self.pad, to_matrix=False)
+        N, C, KH, KW, OH, OW = col.shape
+        col = col.reshape(N, C, KH * KW, OH, OW)
+        col = col.transpose(0, 1, 3, 4, 2).reshape(-1, KH * KW)
+        indexes = self.indexes.ravel()
+        col = col[np.arange(len(indexes)), indexes]
+        return col.reshape(N, C, OH, OW)
+
+
+def pooling(x, kernel_size, stride=1, pad=0):
+    return Pooling(kernel_size, stride, pad)(x)
 
 
 # =============================================================================
@@ -187,8 +320,7 @@ def im2col_array(img, kernel_size, stride, pad, to_matrix=True):
 
     xp = cuda.get_array_module(img)
     if xp != np:
-        # col = _im2col_gpu(img, kernel_size, stride, pad)
-        raise NotImplementedError
+        col = _im2col_gpu(img, kernel_size, stride, pad)
     else:
         # Fill zero paddings
         img = np.pad(
@@ -229,8 +361,8 @@ def col2im_array(col, img_shape, kernel_size, stride, pad, to_matrix=True):
 
     xp = cuda.get_array_module(col)
     if xp != np:
-        # img = _col2im_gpu(col, SH, SW, PH, PW, H, W)
-        raise NotImplementedError
+        img = _col2im_gpu(col, SH, SW, PH, PW, H, W)
+        return img
     else:
         img = np.zeros(
             (N, C, H + 2 * PH + SH - 1, W + 2 * PW + SW - 1), dtype=col.dtype
@@ -242,3 +374,81 @@ def col2im_array(col, img_shape, kernel_size, stride, pad, to_matrix=True):
                 img[:, :, j:j_lim:SH, i:i_lim:SW] += col[:, :, j, i, :, :]
 
         return img[:, :, PH : H + PH, PW : W + PW]
+
+
+def _im2col_gpu(img, kernel_size, stride, pad):
+    """im2col function for GPU:
+    https://github.com/chainer/chainer/blob/v6.4.0/chainer/utils/conv.py
+    """
+    n, c, h, w = img.shape
+    kh, kw = pair(kernel_size)
+    sy, sx = pair(stride)
+    ph, pw = pair(pad)
+    out_h = get_conv_outsize(h, kh, sy, ph)
+    out_w = get_conv_outsize(w, kw, sx, pw)
+    dy, dx = 1, 1
+    col = cuda.cupy.empty((n, c, kh, kw, out_h, out_w), dtype=img.dtype)
+
+    cuda.cupy.ElementwiseKernel(
+        in_params="raw T img, int32 h, int32 w, int32 out_h, int32 out_w,"
+        "int32 kh, int32 kw, int32 sy, int32 sx, int32 ph, int32 pw,"
+        "int32 dy, int32 dx",
+        out_params="T col",
+        operation="""
+            int c0 = i / (kh * kw * out_h * out_w);
+            int ky = i / (kw * out_h * out_w) % kh;
+            int kx = i / (out_h * out_w) % kw;
+            int out_y = i / out_w % out_h;
+            int out_x = i % out_w;
+            int in_y = ky * dy + out_y * sy - ph;
+            int in_x = kx * dx + out_x * sx - pw;
+            if ((in_y >= 0) && (in_y < h) && (in_x >= 0) && (in_x < w)) {
+                col = img[in_x + w * (in_y + h * c0)];
+            } else {
+                col = 0;
+            }
+        """,
+        name="im2col",
+    )(img.reduced_view(), h, w, out_h, out_w, kh, kw, sy, sx, ph, pw, dy, dx, col)
+
+    return col
+
+
+def _col2im_gpu(col, sy, sx, ph, pw, h, w):
+    """col2im function for GPU:
+    https://github.com/chainer/chainer/blob/v6.4.0/chainer/utils/conv.py
+    """
+    n, c, kh, kw, out_h, out_w = col.shape
+    dx, dy = 1, 1
+    img = cuda.cupy.empty((n, c, h, w), dtype=col.dtype)
+
+    cuda.cupy.ElementwiseKernel(
+        in_params="raw T img, int32 h, int32 w, int32 out_h, int32 out_w,"
+        "int32 kh, int32 kw, int32 sy, int32 sx, int32 ph, int32 pw,"
+        "int32 dx, int32 dy",
+        out_params="T img",
+        operation="""
+            int c0 = i / (h * w);
+            int y = i / w % h;
+            int x = i % w;
+            T val = 0;
+            for (int ky = 0; ky < kh; ++ky) {
+                int out_y = (y + ph - ky * dy);
+                if ((0 > out_y) || (out_y >= out_h * sy)) continue;
+                if (out_y % sy != 0) continue;
+                out_y /= sy;
+                for (int kx = 0; kx < kw; ++kx) {
+                    int out_x = (x + pw - kx * dx);
+                    if ((0 > out_x) || (out_x >= out_w * sx)) continue;
+                    if (out_x % sx != 0) continue;
+                    out_x /= sx;
+                    int k = out_y + out_h * (kx + kw * (ky + kh * c0));
+                    val = val + col[out_x + out_w * k];
+                }
+            }
+            img = val;
+        """,
+        name="col2im",
+    )(col.reduced_view(), h, w, out_h, out_w, kh, kw, sy, sx, ph, pw, dx, dy, img)
+
+    return img

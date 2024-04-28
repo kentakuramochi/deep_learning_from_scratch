@@ -160,7 +160,7 @@ class Conv2d(Layer):
         self.W.data = W_data
 
     def forward(self, x):
-        if self.W_data is None:
+        if self.W.data is None:
             self.in_channels = x.shape[1]
             xp = cuda.get_array_module(x)
             self._init_W(xp)

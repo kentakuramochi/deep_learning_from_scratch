@@ -24,6 +24,7 @@ else:
     from dezero.dataloaders import DataLoader
 
     import dezero.datasets
+    import dezero.optimizers
     import dezero.cuda
     import dezero.transforms
 

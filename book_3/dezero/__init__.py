@@ -1,3 +1,5 @@
+""" Dezero: deep learning framework with Python. """
+
 is_simple_core = False  # Use the simple version of dezero
 
 if is_simple_core:
@@ -21,11 +23,16 @@ else:
     from dezero.core import Config
     from dezero.layers import Layer
     from dezero.models import Model
+    from dezero.datasets import Dataset
     from dezero.dataloaders import DataLoader
     from dezero.dataloaders import SeqDataLoader
 
     import dezero.datasets
+    import dezero.dataloaders
     import dezero.optimizers
+    import dezero.functions_conv
+    import dezero.layers
+    import dezero.utils
     import dezero.cuda
     import dezero.transforms
 

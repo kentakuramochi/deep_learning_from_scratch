@@ -1,10 +1,11 @@
-import numpy as np
+""" Network model. """
 
-from dezero import Layer
-from dezero import utils
+import numpy as np
 
 import dezero.functions as F
 import dezero.layers as L
+from dezero import Layer
+from dezero import utils
 
 
 # =============================================================================

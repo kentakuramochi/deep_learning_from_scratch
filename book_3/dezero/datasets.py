@@ -1,6 +1,8 @@
+""" Datasets. """
+
 import gzip
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from dezero.utils import get_file
 from dezero.transforms import Compose, Flatten, ToFloat, Normalize

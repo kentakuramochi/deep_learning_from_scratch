@@ -1,3 +1,5 @@
+""" Core module. """
+
 import contextlib
 import numpy as np
 import weakref

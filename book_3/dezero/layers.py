@@ -1,6 +1,8 @@
+""" Layers in the network model. """
+
 import os
-import weakref
 import numpy as np
+import weakref
 
 import dezero.functions as F
 from dezero import cuda

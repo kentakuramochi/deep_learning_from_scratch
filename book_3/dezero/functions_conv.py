@@ -1,3 +1,5 @@
+""" Convolution and support functions. """
+
 import numpy as np
 
 from dezero import cuda

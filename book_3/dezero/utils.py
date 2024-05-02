@@ -1,7 +1,9 @@
+""" Utility functions. """
+
 import os
-import urllib.request
-import subprocess
 import numpy as np
+import subprocess
+import urllib.request
 
 from tempfile import TemporaryDirectory
 

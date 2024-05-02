@@ -1,4 +1,8 @@
+""" Support functions for CUDA. """
+
 import numpy as np
+
+from dezero import Variable
 
 gpu_enable = True
 try:
@@ -7,8 +11,6 @@ try:
     cupy = cp
 except ImportError:
     gpu_enable = False
-
-from dezero import Variable
 
 
 def get_array_module(x):

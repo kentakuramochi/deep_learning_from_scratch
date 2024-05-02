@@ -1,4 +1,7 @@
+""" Functions in the computational graph. """
+
 import numpy as np
+
 import dezero
 from dezero.core import Variable, Function, as_array, as_variable
 from dezero import cuda, utils

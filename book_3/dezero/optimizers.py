@@ -1,3 +1,5 @@
+""" Optimizer. """
+
 import math
 
 from dezero import cuda

@@ -182,6 +182,17 @@ class GetItemGrad(Function):
         return get_item(ggx, self.slices)
 
 
+def expand_dims(x, axis):
+    x = as_variable(x)
+    shape = list(x.shape)
+    shape.insert(axis, 1)
+    return reshape(x, tuple(shape))
+
+
+def flatten(x):
+    return reshape(x, (x.shape[0], -1))
+
+
 class Sum(Function):
     def __init__(self, axis, keepdims):
         self.axis = axis
@@ -241,6 +252,15 @@ def broadcast_to(x, shape):
     if x.shape == shape:
         return as_variable(x)
     return BroadcastTo(shape)(x)
+
+
+def average(x, axis=None, keepdims=False):
+    x = as_variable(x)
+    y = sum(x, axis, keepdims)
+    return y * (y.data.size / x.data.size)
+
+
+mean = average
 
 
 class MatMul(Function):
@@ -357,6 +377,46 @@ def softmax_simple(x, axis=1):
     return y / sum_y
 
 
+class LogSoftmax(Function):
+    def __init__(self, axis=1):
+        self.axis = axis
+
+    def forward(self, x):
+        log_z = utils.logsumexp(x, self.axis)
+        y = x - log_z
+        return y
+
+    def backward(self, gy):
+        y = self.outputs[0]()
+        gx = gy - exp(y) * gy.sum(axis=self.axis, keepdims=True)
+        return gx
+
+
+def log_softmax(x, axis=1):
+    return LogSoftmax(axis)(x)
+
+
+class LeakyReLU(Funciton):
+    def __init__(self, slope):
+        self.slope = slope
+
+    def forward(self, x):
+        y = x.copy()
+        y[x <= 0] *= self.slope
+        return y
+
+    def backward(self, gy):
+        (x,) = self.inputs
+        mask = (x.data > 0).astype(gy.dtype)
+        mask[mask <= 0] = self.slope
+        gx = gy * mask
+        return gx
+
+
+def leaky_relu(x, slope=0.2):
+    return LeakyReLU(slope)(x)
+
+
 # =============================================================================
 # Loss functions
 # =============================================================================
@@ -420,6 +480,28 @@ def softmax_cross_entropy_simple(x, t):
     return y
 
 
+def sigmoid_cross_entropy(x, t):
+    if x.ndim != t.ndim:
+        t = t.reshape(*x.shape)
+    x, t = as_variable(x), as_variable(t)
+    N = len(x)
+    p = sigmoid(x)
+    p = clip(p, 1e-15, 1.0)  # Avoid the error of log(p)
+    tlog_p = t * log(p) + (1 - t) * log(1 - p)
+    y = -1 * sum(tlog_p) / N
+    return y
+
+
+def binary_cross_entropy(p, t):
+    if p.ndim != t.ndim:
+        t = t.reshape(*p.shape)
+    N = len(t)
+    p = clip(p, 1e-15, 0.999)  # Avoid the error of log(p)
+    tlog_p = t * log(p) + (1 - t) * log(1 - p)
+    y = -1 * sum(tlog_p) / N
+    return y
+
+
 # =============================================================================
 # Utility operations
 # =============================================================================
@@ -446,6 +528,82 @@ def dropout(x, dropout_ratio=0.5):
         return y
     else:
         return x
+
+
+class BatchNorm(Function):
+    def __init__(self, mean, var, decay, eps):
+        self.avg_mean = mean
+        self.avg_var = var
+        self.decay = decay
+        self.eps = eps
+        self.inv_std = None
+
+    def forward(self, x, gamma, beta):
+        assert x.ndim == 2 or x.ndim == 4
+
+        x_ndim = x.ndim
+        if x_ndim == 4:
+            N, C, H, W = x.shape
+            # (N, C, H, W) to (N*H*W, C)
+            x = x.transpose(0, 2, 3, 1).reshape(-1, C)
+
+        xp = cuda.get_array_module(x)
+
+        if dezero.Config.train:
+            mean = x.mean(axis=0)
+            var = x.var(axis=0)
+            inv_std = 1 / xp.sqrt(var + self.eps)
+            xc = (x - mean) * inv_std
+
+            m = x.size // gamma.size
+            s = m - 1.0 if m - 1.0 > 1.0 else 1.0
+            adjust = m / s  # Unbiased estimation
+            self.avg_mean *= self.decay
+            self.avg_mean += (1 - self.decay) * mean
+            self.avg_var *= self.decay
+            self.avg_var += (1 - self.decay) * adjust * var
+            self.inv_std = inv_std
+        else:
+            inv_std = 1 / xp.sqrt(self.avg_var + self.eps)
+            xc = (x - self.avg_mean) * inv_std
+        y = gamma * xc + beta
+
+        if x_ndim == 4:
+            # (N*H*W, C) to (N, C, H, W)
+            y = y.reshape(N, H, W, C).transpose(0, 3, 1, 2)
+        return y
+
+    def backward(self, gy):
+        gy_ndim = gy.ndim
+        if gy_ndim == 4:
+            N, C, H, W = gy.shape
+            gy = gy.transpose(0, 2, 3, 1).reshape(-1, C)
+
+        x, gamma, beta = self.inputs
+        batch_size = len(gy)
+
+        if x.ndim == 4:
+            N, C, H, W = x.shape
+            x = x.transpose(0, 2, 3, 1).reshape(-1, C)
+        mean = x.sum(axis=0) / batch_size
+        xc = (x - mean) * self.inv_std
+
+        gbeta = sum(gy, axis=0)
+        ggamma = sum(xc * gy, axis=0)
+        gx = gy - gbeta / batch_size - xc * ggamma / batch_size
+        gx *= gamma * self.inv_std
+
+        if gy_ndim == 4:
+            gx = gx.reshape(N, H, W, C).transpose(0, 3, 1, 2)
+        return gx, ggamma, gbeta
+
+
+def batch_norm(x, gamma, beta, mean, var, decay=0.9, eps=2e-5):
+    return BatchNorm(mean, var, decay, eps)(x, gamma, beta)
+
+
+def embed_id(x, W):
+    return W[x]
 
 
 # =============================================================================

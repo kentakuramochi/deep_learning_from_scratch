@@ -166,7 +166,7 @@ class Conv2DGradW(Function):
 
 
 # =============================================================================
-# pooling (max-pooling)
+# pooling (max-pooling)/average pooling
 # =============================================================================
 class Pooling(Function):
     def __init__(self, kernel_size, stride=1, pad=0):
@@ -245,6 +245,41 @@ class Pooling2DWithIndexes(Function):
 
 def pooling(x, kernel_size, stride=1, pad=0):
     return Pooling(kernel_size, stride, pad)(x)
+
+
+class AveragePooling(Function):
+    def __init__(self, kernel_size, stride=1, pad=0):
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.pad = pad
+        self.input_shape = None
+
+    def forward(self, x):
+        self.input_shape = x.shape
+        col = im2col_array(x, self.kernel_size, self.stride, self.pad, to_matrix=False)
+        y = col.mean(axis=(2, 3))
+        return y
+
+    def backward(self, gy):
+        N, C, OH, OW = gy.shape
+        KW, KH = pair(self.kernel_size)
+        gy /= KW * KH
+        gcol = broadcast_to(gy.reshape(-1), (KH, KW, N * C * OH * OW))
+        gcol = gcol.reshape(KH, KW, N, C, C, OH, OW).transpose(2, 3, 0, 1, 4, 5)
+        gx = col2im(
+            gcol,
+            self.input_shape,
+            self.kernel_size,
+            self.stride,
+            self.pad,
+            to_matrix=False,
+        )
+        return gx
+
+
+def average_pooling(x, kernel_size, stride=1, pad=0):
+    return AveragePooling(kernel_size, stride, pad)(x)
 
 
 # =============================================================================

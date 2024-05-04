@@ -396,7 +396,7 @@ def log_softmax(x, axis=1):
     return LogSoftmax(axis)(x)
 
 
-class LeakyReLU(Funciton):
+class LeakyReLU(Function):
     def __init__(self, slope):
         self.slope = slope
 
@@ -671,6 +671,7 @@ def clip(x, x_min, x_max):
 from dezero.functions_conv import conv2d
 from dezero.functions_conv import deconv2d
 from dezero.functions_conv import pooling
+from dezero.functions_conv import average_pooling
 from dezero.functions_conv import im2col
 from dezero.functions_conv import col2im
 

@@ -8,6 +8,8 @@
 （[サポートサイト（GitHub）](https://github.com/oreilly-japan/deep-learning-from-scratch-2)）
 - `book_3`: 『ゼロから作る Deep Learning ❸ ―フレームワーク編』
 （[サポートサイト（GitHub）](https://github.com/oreilly-japan/deep-learning-from-scratch-3)）
+- `book_4`: 『ゼロから作るDeep Learning ❹ 強化学習編』
+（[サポートサイト（GitHub）](https://github.com/oreilly-japan/deep-learning-from-scratch-4)）
 
 ## ライセンス
 

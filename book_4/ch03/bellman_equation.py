@@ -47,8 +47,8 @@ def policy(state):
         return Action.Right if p < 0.5 else Action.Left
 
 
-def get_reward(state, action, next_state):
-    """Get the reward.
+def reward(state, action, next_state):
+    """Reward earned by the action and state.
 
     Args:
         state (State): Current state.
@@ -97,18 +97,31 @@ def transit(state, action):
             return State.L2
 
 
-# Bellman equations
+# Bellman equations for state-value function
 #
 # v(L1) =
-#   0.5 * (r(L1, Left, L1) + discount_rate * v(L1))
-# + 0.5 * (r(L1, Right, L2) + discount_rate * v(L2))
+#   0.5 * (r(L1, Left, L1)(=-1) + discount_rate * v(L1))
+# + 0.5 * (r(L1, Right, L2)(=1) + discount_rate * v(L2))
 #
 # v(L2) =
-#   0.5 * (r(L2, Left, L1) + discount_rate * v(L1))
-# + 0.5 * (r(L2, Right, L2) + discount_rate * v(L2))
+#   0.5 * (r(L2, Left, L1)(=0) + discount_rate * v(L1))
+# + 0.5 * (r(L2, Right, L2)(=-1) + discount_rate * v(L2))
 #
 # -0.55 * v(L1) + 0.45 * v(L2) = 0
 #  0.45 * v(L2) - 0.55 * v(L2) = 0.5
 #
 # v(L1) = -2.25
 # v(L2) = -2.75
+
+# Bellman equations for action-value function
+#
+# q(L1, Right) =
+#   0.5 * (
+#       r(L1, Right, L1)(=0)
+#       + discount_rate * (0.5 * q(L1, Right) + 0.5 * q(L1, Left))
+#  )
+# + 0.5 * (
+#       r(L1, Right, L2)(=1)
+#       + discount_rate * (0.5 * q(L2, Right) + 0.5 * q(L1, Left))
+#   )
+# ...

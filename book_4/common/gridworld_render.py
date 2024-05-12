@@ -57,7 +57,7 @@ class Renderer:
             v (Tuple[int, int]): State values.
             policy (Dict[int, float]): Policy of the agent.
             print_value (bool): If True, print the state values.
-            to_file (str): If specified, output a figure as an image file with this name.
+            to_file (str): If specified, output a figure as an image file to this path.
         """
         self.set_figure()
 

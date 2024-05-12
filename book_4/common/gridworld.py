@@ -122,7 +122,7 @@ class GridWorld:
             (0, 1),  # Right
         ]
         move = action_move_map[action]
-        next_state = [state[0] + move[0], state[1] + move[1]]
+        next_state = (state[0] + move[0], state[1] + move[1])
         ny, nx = next_state
 
         # Limit the state by walls
@@ -156,7 +156,7 @@ class GridWorld:
             v (Tuple[int, int]): State values.
             policy (Dict[int, float]): Policy of the agent.
             print_value (bool): If True, print the state values.
-            to_file (str): If specified, output a figure as an image file with this name.
+            to_file (str): If specified, output a figure as an image file to this path.
         """
         renderer = render_helper.Renderer(
             self.reward_map, self.goal_state, self.wall_state

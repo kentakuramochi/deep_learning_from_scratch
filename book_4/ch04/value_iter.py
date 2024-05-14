@@ -65,3 +65,24 @@ def value_iter(V, env, gamma, threshold=0.001, is_render=True):
         if delta < threshold:
             break
     return V
+
+
+def test():
+    """Test of the value iteration."""
+    from collections import defaultdict
+    from common.gridworld import GridWorld
+    from ch04.policy_iter import greedy_poilcy
+
+    # State value function
+    V = defaultdict(lambda: 0)
+    env = GridWorld()
+    gamma = 0.9
+
+    V = value_iter(V, env, gamma)
+
+    pi = greedy_poilcy(V, env, gamma)  # Policy
+    env.render_v(V, pi, to_file="value_iteration.png")
+
+
+if __name__ == "__main__":
+    test()

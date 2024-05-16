@@ -149,6 +149,31 @@ class GridWorld:
         """
         return self.reward_map[next_state]
 
+    def reward(self):
+        """Reset the gridworld into an initial state."""
+        self.agent_state = self.start_state
+        return self.agent_state
+
+    def step(self, action):
+        """Get the agent into an action.
+
+        Args:
+            action (int): Action of the agent.
+
+        Returns:
+            (Tuple[Tuple[int, int], float, bool]):
+                * Next state.
+                * Reward.
+                * Flag, True if an episode is done.
+        """
+        state = self.agent_state
+        next_state = self.next_state(state, action)
+        reward = self.reward(state, action, next_state)
+        done = next_state == self.goal_state
+
+        self.agent_state = next_state
+        return next_state, reward, done
+
     def render_v(self, v=None, policy=None, print_value=True, to_file=None):
         """Visualize the gridworld with state values.
 

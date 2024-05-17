@@ -149,7 +149,7 @@ class GridWorld:
         """
         return self.reward_map[next_state]
 
-    def reward(self):
+    def reset(self):
         """Reset the gridworld into an initial state."""
         self.agent_state = self.start_state
         return self.agent_state

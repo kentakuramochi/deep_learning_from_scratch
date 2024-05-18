@@ -187,3 +187,16 @@ class GridWorld:
             self.reward_map, self.goal_state, self.wall_state
         )
         renderer.render_v(v, policy, print_value, to_file)
+
+    def render_q(self, q=None, print_value=True, to_file=None):
+        """Visualize the gridworld with action values.
+
+        Args:
+            q (Tuple[int, int]): Action values.
+            print_value (bool): If True, print the action values.
+            to_file (str): If specified, output a figure as an image file to this path.
+        """
+        renderer = render_helper.Renderer(
+            self.reward_map, self.goal_state, self.wall_state
+        )
+        renderer.render_q(q, print_value, to_file)

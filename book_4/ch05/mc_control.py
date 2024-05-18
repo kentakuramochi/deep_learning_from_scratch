@@ -1,4 +1,4 @@
-"""Policy evaluation by using Monte Carlo method."""
+"""Policy iteration by using Monte Carlo method."""
 
 if "__file__" in globals():
     import os, sys
@@ -10,28 +10,52 @@ import numpy as np
 from common.gridworld import GridWorld
 
 
-class RandomAgent:
-    """Agent woking by random policy.
+def greedy_probs(Q, state, epsilon=0, action_size=4):
+    """Get a greedy policy by using eplison-greedy method.
+
+    Args:
+        Q (Dict[Tuple[Tuple[int, int], int], float]): Action value function.
+        state (Tuple[int, int]): Curren state.
+        epsilon (float): Probability of the exploration.
+        action_size (int): Number of actions (=4).
+
+    Returns:
+        (Dict[Tuple[int, int], float]): Greedy policy.
+    """
+    qs = [Q[(state, action)] for action in range(action_size)]
+    max_action = np.argmax(qs)  # Select an optimal action
+
+    # Set the prob. of the exploration equally for non-optimal actions
+    base_prob = epsilon / action_size
+    action_probs = {action: base_prob for action in range(action_size)}
+    action_probs[max_action] += 1 - epsilon  # Greedy policy (=1)
+    return action_probs
+
+
+class McAgent:
+    """Agent control its policy by using Monte Carlo method.
 
     Attributes:
         gamma (float): Discount rate.
+        epsilon (float): Probability of the exploration.
+        alpha (float): Smoothing factor of the Q value.
         action_size (int): Number of actions (=4).
         pi: (Dict[int, float]): Policy of the agent.
-        V (Dict[Tuple[int, int], float]): State value function.
-        cnts (Dict[Tuple[int, int], int]): Counts of each state.
+        Q (Dict[Tuple[Tuple[int, int], int], float]): Action value function.
         memory (List[Tuple[Tuple[int, int], int, float]]):
             Records of states, actions and rewards until reaching the goal.
     """
 
     def __init__(self):
         self.gamma = 0.9
+        self.epsilon = 0.1
+        self.alpha = 0.1
         self.action_size = 4
 
-        # Policy: act randomly, by normal distribution
+        # Initialize policy in random by normal distribution
         random_actions = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
         self.pi = defaultdict(lambda: random_actions)
-        self.V = defaultdict(lambda: 0)
-        self.cnts = defaultdict(lambda: 0)
+        self.Q = defaultdict(lambda: 0)
         self.memory = []
 
     def get_action(self, state):
@@ -63,18 +87,24 @@ class RandomAgent:
         """Reset the memory."""
         self.memory.clear()
 
-    def eval(self):
-        """Evaluate value functions by Monte Carlo method."""
+    def update(self):
+        """Update the policy."""
         G = 0  # Gain
-        for data in reversed(self.memory):  # Backtrack from the goal
+        for data in reversed(self.memory):
             state, action, reward = data
-            G = self.gamma * G + reward  # Update the gain
-            self.cnts[state] += 1
-            self.V[state] += (G - self.V[state]) / self.cnts[state]  # Average
+            G = self.gamma * G + reward
+            key = (state, action)
+
+            # Update the Q function by EMA (Exponential Moving Average)
+            self.Q[key] += (G - self.Q[key]) * self.alpha
+
+            self.pi[state] = greedy_probs(
+                self.Q, state, self.epsilon
+            )  # Set a greedy policy
 
 
 env = GridWorld()
-agent = RandomAgent()
+agent = McAgent()
 
 episodes = 1000  # Num of episodes
 for episode in range(episodes):
@@ -87,10 +117,10 @@ for episode in range(episodes):
 
         agent.add(state, action, reward)
         if done:
-            # Update V by Monte Carlo method
-            agent.eval()
+            # Update Q by Monte Carlo method
+            agent.update()
             break
 
         state = next_state
 
-env.render_v(agent.V, to_file="mc_eval.png")
+env.render_q(agent.Q, to_file="mc_control.png")

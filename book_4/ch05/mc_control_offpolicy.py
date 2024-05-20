@@ -7,40 +7,20 @@ if "__file__" in globals():
 
 from collections import defaultdict
 import numpy as np
+from common.utils import greedy_probs
 from common.gridworld import GridWorld
 
 
-def greedy_probs(Q, state, epsilon=0, action_size=4):
-    """Get a greedy policy by using eplison-greedy method.
-
-    Args:
-        Q (Dict[Tuple[Tuple[int, int], int], float]): Action value function.
-        state (Tuple[int, int]): Curren state.
-        epsilon (float): Probability of the exploration.
-        action_size (int): Number of actions (=4).
-
-    Returns:
-        (Dict[Tuple[int, int], float]): Greedy policy.
-    """
-    qs = [Q[(state, action)] for action in range(action_size)]
-    max_action = np.argmax(qs)  # Select an optimal action
-
-    # Set the prob. of the exploration equally for non-optimal actions
-    base_prob = epsilon / action_size
-    action_probs = {action: base_prob for action in range(action_size)}
-    action_probs[max_action] += 1 - epsilon  # Greedy policy (=1)
-    return action_probs
-
-
-class McAgent:
-    """Agent which updates its policy by using Monte Carlo method.
+class McOffPolicyAgent:
+    """Agent which updates its policy by using off-policy Monte Carlo method.
 
     Attributes:
         gamma (float): Discount rate.
         epsilon (float): Probability of the exploration.
         alpha (float): Smoothing factor of the Q value.
         action_size (int): Number of actions (=4).
-        pi: (Dict[int, float]): Policy of the agent.
+        pi: (Dict[int, float]): Target policy of the agent.
+        b: (Dict[int, float]): Behavior policy of the agent.
         Q (Dict[Tuple[Tuple[int, int], int], float]): Action value function.
         memory (List[Tuple[Tuple[int, int], int, float]]):
             Records of states, actions and rewards until reaching the goal.
@@ -54,7 +34,8 @@ class McAgent:
 
         # Initialize policy in random by normal distribution
         random_actions = {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
-        self.pi = defaultdict(lambda: random_actions)
+        self.pi = defaultdict(lambda: random_actions)  # Target policy
+        self.b = defaultdict(lambda: random_actions)  # Behavior policy
         self.Q = defaultdict(lambda: 0)
         self.memory = []
 
@@ -67,13 +48,13 @@ class McAgent:
         Returns:
             (int): Action of the agent.
         """
-        action_probs = self.pi[state]
+        action_probs = self.b[state]  # Action by the behavior policy
         actions = list(action_probs.keys())
         probs = list(action_probs.values())
         return np.random.choice(actions, p=probs)
 
     def add(self, state, action, reward):
-        """Add state, action and reward into a memory.
+        """Add state, action (trajectory) and reward into a memory.
 
         Args:
             state (Tuple[int, int]): State before an action.
@@ -90,21 +71,24 @@ class McAgent:
     def update(self):
         """Update the policy."""
         G = 0  # Gain
+        rho = 1  # Weight used for importance sampling
         for data in reversed(self.memory):
             state, action, reward = data
-            G = self.gamma * G + reward
             key = (state, action)
 
-            # Update the Q function by EMA (Exponential Moving Average)
+            # Update the Q function by EMA and importance sampling
+            G = self.gamma * rho * G + reward
             self.Q[key] += (G - self.Q[key]) * self.alpha
+            rho *= self.pi[state][action] / self.b[state][action]
 
-            self.pi[state] = greedy_probs(
-                self.Q, state, self.epsilon
-            )  # Set a greedy policy
+            # Target policy: greedy
+            self.pi[state] = greedy_probs(self.Q, state, epsilon=0)
+            # Behavior policy: epsilon-greedy
+            self.b[state] = greedy_probs(self.Q, state, self.epsilon)
 
 
 env = GridWorld()
-agent = McAgent()
+agent = McOffPolicyAgent()
 
 episodes = 1000  # Num of episodes
 for episode in range(episodes):
@@ -117,10 +101,9 @@ for episode in range(episodes):
 
         agent.add(state, action, reward)
         if done:
-            # Update Q by Monte Carlo method
             agent.update()
             break
 
         state = next_state
 
-env.render_q(agent.Q, to_file="mc_control.png")
+env.render_q(agent.Q, to_file="mc_control_offpolicy.png")

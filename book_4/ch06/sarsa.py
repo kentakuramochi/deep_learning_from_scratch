@@ -19,7 +19,7 @@ class SarsaAgent:
         alpha (float): Smoothing factor of Q function.
         epsilon (float): Probability of the exploration.
         action_size (int): Number of actions (=4).
-        pi: (Dict[int, float]): Policy of the agent (random).
+        pi (Dict[int, float]): Policy of the agent (random).
         Q (Dict[Tuple[Tuple[int, int], int], float]): Action value function.
         memory (List[Tuple[Tuple[int, int], int, float]]):
             Records of states, actions and rewards until reaching the goal.

@@ -17,7 +17,7 @@ class TdAgent:
         gamma (float): Discount rate.
         alpha (float): Smoothing factor of V function.
         action_size (int): Number of actions (=4).
-        pi: (Dict[int, float]): Policy of the agent (random).
+        pi (Dict[int, float]): Policy of the agent (random).
         V (Dict[Tuple[int, int], float]): State value function.
     """
 

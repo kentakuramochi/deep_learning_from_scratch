@@ -16,7 +16,7 @@ class RandomAgent:
     Attributes:
         gamma (float): Discount rate.
         action_size (int): Number of actions (=4).
-        pi: (Dict[int, float]): Policy of the agent.
+        pi (Dict[int, float]): Policy of the agent.
         V (Dict[Tuple[int, int], float]): State value function.
         cnts (Dict[Tuple[int, int], int]): Counts of each state.
         memory (List[Tuple[Tuple[int, int], int, float]]):

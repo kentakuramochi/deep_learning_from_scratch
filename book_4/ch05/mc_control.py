@@ -40,7 +40,7 @@ class McAgent:
         epsilon (float): Probability of the exploration.
         alpha (float): Smoothing factor of the Q value.
         action_size (int): Number of actions (=4).
-        pi: (Dict[int, float]): Policy of the agent.
+        pi (Dict[int, float]): Policy of the agent.
         Q (Dict[Tuple[Tuple[int, int], int], float]): Action value function.
         memory (List[Tuple[Tuple[int, int], int, float]]):
             Records of states, actions and rewards until reaching the goal.

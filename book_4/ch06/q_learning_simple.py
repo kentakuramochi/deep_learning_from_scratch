@@ -46,7 +46,7 @@ class QLearningAgent:
             return np.argmax(qs)
 
     def update(self, state, action, reward, next_state, done):
-        """Update the Q-function.
+        """Update the Q function.
 
         Args:
             state (Tuple[int, int]): Current state.

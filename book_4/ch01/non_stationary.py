@@ -8,14 +8,15 @@ class NonStatBandit:
     """Multi-armed bandit on non-stationary problem.
 
     Attributes:
-        rates (ndarray[float]): Winning rates of each one-armed bandits (slot machines).
+        arms (int): Number of the bandits.
+        rates (numpy.ndarray[float]): Winning rates of each one-armed bandits (slot machines).
     """
 
     def __init__(self, arms=10):
         """Initialize one-armed bandits with random winning rates.
 
         Args:
-            args (int): Number of the bandits.
+            arms (int): Number of the bandits.
         """
         self.arms = arms
         self.rates = np.random.rand(arms)
@@ -42,7 +43,7 @@ class AlphaAgent:
 
     Attributes:
         epsilon (float): Probability of the exploration.
-        Qs (ndarray[float]): Estimated action values for each action.
+        Qs (numpy.ndarray[float]): Estimated action values for each action.
         alpha (float): Coefficient of the exponential moving average for action values.
     """
 

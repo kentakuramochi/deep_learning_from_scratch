@@ -11,7 +11,15 @@ from dezero import Variable
 
 
 def rosenbrock(x0, x1):
-    """Rosenbrock function."""
+    """Rosenbrock function.
+    
+    Args:
+        x0 (dezero.Variable): Variable x0.
+        x1 (dezero.Variable): Variable x1.
+
+    Returns:
+        (dezero.Variable): Rosenbrock function at (x0, x1)
+    """
     y = 100 * (x1 - x0**2) ** 2 + (x0 - 1) ** 2
     return y
 

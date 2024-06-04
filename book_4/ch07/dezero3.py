@@ -22,7 +22,14 @@ b = Variable(np.zeros((1)))
 
 
 def predict(x):
-    """Predict y = Wx."""
+    """Predict y = Wx.
+    
+    Args:
+        x (dezero.Variable): Input x.
+
+    Returns:
+        (dezero.Variable): Function y = Wx.
+    """
     y = F.matmul(x, W) + b
     return y
 

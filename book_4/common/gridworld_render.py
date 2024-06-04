@@ -9,7 +9,7 @@ class Renderer:
     """Renderer of the gridworld.
 
     Attributes:
-        reward_map (numpy.ndarray(float)): Rewards of each grid.
+        reward_map (numpy.ndarray[float]): Rewards of each grid.
         goal_state (Tuple[int, int]): Grid index of the goal.
         wall_state (Tuple[int, int]): Grid index of the wall.
         ys (int): Height of the world.
@@ -54,7 +54,7 @@ class Renderer:
         """Visualize the gridworld with state values.
 
         Args:
-            v (Tuple[int, int]): State values.
+            v (Dict[Tuple[int, int], float]): State value functions.
             policy (Dict[int, float]): Policy of the agent.
             print_value (bool): If True, print the state values.
             to_file (str): If specified, output a figure as an image file to this path.
@@ -145,7 +145,7 @@ class Renderer:
         """Visualize the gridworld with state values.
 
         Args:
-            q (Tuple[int, int]): Action values.
+            q (Dict[Tuple[Tuple[int, int], int], float]): Action value functions.
             show_greedy_policy (bool): If True, print the actions with a greedy policy.
             to_file (str): If specified, output a figure as an image file to this path.
         """

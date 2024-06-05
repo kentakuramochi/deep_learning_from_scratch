@@ -25,8 +25,9 @@ def one_hot(state):
         state (Tuple[int, int]): State.
 
     Returns:
-        (np.ndarray(float)): State in one-hot vector.
+        (numpy.ndarray[float]): State in one-hot vector.
     """
+
     HEIGHT, WIDTH = 3, 4
     vec = np.zeros(HEIGHT * WIDTH, dtype=np.float32)
     y, x = state
@@ -55,8 +56,9 @@ class QNet(Model):
             x (dezero.Variable): State in one-hot vector.
 
         Returns:
-            (dezero.Variable): Value of the Q-function.
+            (dezero.Variable): Value of the Q function.
         """
+
         x = F.relu(self.l1(x))
         x = self.l2(x)
         return x
@@ -70,7 +72,7 @@ class QLearningAgent:
         lr (float): Learning rate.
         epsilon (float): Probability of the exploration.
         action_size (int): Number of actions (=4).
-        qnet (QNet): Neural network for the Q-function.
+        qnet (QNet): Neural network for the Q function.
         optimizer (dezero.optimizer): Optimizer of the network.
     """
 
@@ -84,11 +86,11 @@ class QLearningAgent:
         self.optimizer = optimizers.SGD(self.lr)
         self.optimizer.setup(self.qnet)
 
-    def get_action(self, state):
+    def get_action(self, state_vec):
         """Get an action of the agent.
 
         Args:
-            state (np.ndarray(float)): Current state in one-hot vector.
+            state_vec (numpy.ndarray[float]): Current state in one-hot vector.
 
         Returns:
             (int): Action of the agent.
@@ -97,17 +99,17 @@ class QLearningAgent:
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.action_size)
         else:
-            qs = self.qnet(state)
+            qs = self.qnet(state_vec)
             return qs.data.argmax()
 
     def update(self, state, action, reward, next_state, done):
-        """Update the Q-function.
+        """Update the Q function.
 
         Args:
-            state (np.ndarray(float)): Current state in one-hot vector.
+            state (numpy.ndarray[float]): Current state in one-hot vector.
             action (int): Action of the agent.
             reward (float): Reward.
-            next_state (np.ndarray(float)): Next state in one-hot vector.
+            next_state (numpy.ndarray[float]): Next state in one-hot vector.
             done (bool): Flag, True if an episode finished.
         """
         if done:
@@ -135,11 +137,13 @@ agent = QLearningAgent()
 episodes = 1000  # Num of episodes
 loss_history = []
 
-for episodes in range(episodes):
+for episode in range(episodes):
     state = env.reset()
     state = one_hot(state)
     total_loss, cnt = 0, 0
     done = False
+
+    print(f"episode: {episode}")
 
     # Learning
     while not done:
@@ -155,7 +159,16 @@ for episodes in range(episodes):
     average_loss = total_loss / cnt
     loss_history.append(average_loss)
 
+# Plot a loss history
 plt.plot(loss_history)
 plt.xlabel("episode")
 plt.ylabel("loss")
-plt.savefig("loss_history.png")
+plt.savefig("output/loss_history.png")
+
+# Visualize Q function
+Q = {}
+for state in env.states():
+    for action in env.action_space:
+        q = agent.qnet(one_hot(state))[:, action]
+        Q[state, action] = float(q.data[0])
+env.render_q(Q, to_file="output/q_learning_nn.png")

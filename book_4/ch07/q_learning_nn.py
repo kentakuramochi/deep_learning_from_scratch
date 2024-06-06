@@ -27,7 +27,6 @@ def one_hot(state):
     Returns:
         (numpy.ndarray[float]): State in one-hot vector.
     """
-
     HEIGHT, WIDTH = 3, 4
     vec = np.zeros(HEIGHT * WIDTH, dtype=np.float32)
     y, x = state
@@ -58,7 +57,6 @@ class QNet(Model):
         Returns:
             (dezero.Variable): Value of the Q function.
         """
-
         x = F.relu(self.l1(x))
         x = self.l2(x)
         return x
@@ -134,7 +132,7 @@ class QLearningAgent:
 env = GridWorld()
 agent = QLearningAgent()
 
-episodes = 1000  # Num of episodes
+episodes = 100  # Num of episodes
 loss_history = []
 
 for episode in range(episodes):
@@ -142,8 +140,6 @@ for episode in range(episodes):
     state = one_hot(state)
     total_loss, cnt = 0, 0
     done = False
-
-    print(f"episode: {episode}")
 
     # Learning
     while not done:

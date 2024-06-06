@@ -75,7 +75,7 @@ class GridWorld:
         Returns:
             (int): Width of the grid.
         """
-        return len(self.reward_map[1])
+        return len(self.reward_map[0])
 
     @property
     def shape(self):

@@ -132,7 +132,7 @@ class QLearningAgent:
 env = GridWorld()
 agent = QLearningAgent()
 
-episodes = 100  # Num of episodes
+episodes = 1000  # Num of episodes
 loss_history = []
 
 for episode in range(episodes):
@@ -147,10 +147,20 @@ for episode in range(episodes):
         next_state, reward, done = env.step(action)
         next_state = one_hot(next_state)
 
-        loss = agent.update(state, action, reward, next_state, done)
-        total_loss += loss
         cnt += 1
+
+        # Retry the episode when it takes over 100 steps
+        if cnt >= 100 and not done:
+            env.reset()
+            cnt = 0
+
         state = next_state
+
+    # Learn only from the finished episode
+    loss = agent.update(state, action, reward, next_state, done)
+    total_loss += loss
+
+    # print(f"episode {episode}, count={cnt}, loss={loss}")
 
     average_loss = total_loss / cnt
     loss_history.append(average_loss)

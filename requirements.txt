@@ -22,6 +22,7 @@ pillow==10.2.0
 platformdirs==4.2.0
 pycodestyle==2.11.1
 pyflakes==3.2.0
+pygame==2.5.2
 pyparsing==3.1.1
 python-dateutil==2.8.2
 regex==2023.12.25

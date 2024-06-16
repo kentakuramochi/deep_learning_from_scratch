@@ -1,10 +1,11 @@
-"""Introduction to OpenAI Gym."""
+"""Introduction to Gymnasium."""
 
-import gym
+import gymnasium as gym
 
 
 # CartPole game
-env = gym.make("CartPole-v0")
+# env = gym.make("CartPole-v0")  # Out of date
+env = gym.make("CartPole-v1")
 
 # State:
 # [position, velocity, angle, angular velocity]

@@ -1,12 +1,12 @@
-"""Play the CartPole in the OpenAI Gym with using a random agent."""
+"""Play the CartPole with using a random agent."""
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 
 # CartPole game
 # env = gym.make("CartPole-v0")  # Out of date
-env = gym.make("CartPole-v1", render_mode="rgb_array")
+env = gym.make("CartPole-v1", render_mode="human")  # Render the environment for human
 
 state = env.reset()
 done = False

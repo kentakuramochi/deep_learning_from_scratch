@@ -5,6 +5,5 @@ __pycache__/
 *.npy
 
 book_1/dataset/
-book_2/dataset/ptb.*.txt
-book_2/*.txt
+book_2/dataset/ptb.*.npy
 book_3/*.npz

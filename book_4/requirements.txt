@@ -1,4 +1,9 @@
+ale-py==0.8.1
+AutoROM==0.4.2
+AutoROM.accept-rom-license==0.6.1
 black==24.3.0
+certifi==2024.6.2
+charset-normalizer==3.3.2
 click==8.1.7
 cloudpickle==3.0.0
 contourpy==1.2.0
@@ -9,6 +14,8 @@ fastrlock==0.8.2
 flake8==7.0.0
 fonttools==4.49.0
 gymnasium==0.29.1
+idna==3.7
+importlib_resources==6.4.0
 kiwisolver==1.4.5
 matplotlib==3.8.3
 mccabe==0.7.0
@@ -23,5 +30,9 @@ pyflakes==3.2.0
 pygame==2.5.2
 pyparsing==3.1.1
 python-dateutil==2.8.2
+requests==2.32.3
+Shimmy==0.2.1
 six==1.16.0
+tqdm==4.66.4
 typing_extensions==4.12.2
+urllib3==2.2.2

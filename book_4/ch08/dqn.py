@@ -83,7 +83,7 @@ class ReplayBuffer:
         """Add an experience to the buffer.
 
         Args:
-            state (Tuple[NDArray[float]]): Current state.
+            state (NDArray[float]): Current state.
             action (int): Agent's action.
             reward (float): Reward.
             next_state (NDArray[float]): Next state.

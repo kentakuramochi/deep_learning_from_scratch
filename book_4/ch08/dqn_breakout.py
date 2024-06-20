@@ -51,6 +51,9 @@ class QNet(Model):
         Returns:
             (dezero.Variable): Value of the Q function.
         """
+        if x.ndim == 3:
+            # Extend a batch dimension
+            x = F.reshape(x, (1, *x.shape))
         x = F.relu(self.c1(x))
         x = F.pooling(x, 2, 2)
         x = F.relu(self.c2(x))
@@ -93,7 +96,7 @@ class ReplayBuffer:
         """Add an experience to the buffer.
 
         Args:
-            state (Tuple[NDArray[float]]): Current state.
+            state (NDArray[float]): Current state.
             action (int): Agent's action.
             reward (float): Reward.
             next_state (NDArray[float]): Next state.
@@ -212,6 +215,19 @@ class DQNAgent:
         self.optimizer.update()
 
 
+def preprocess(state):
+    """Preprocess a state for the CNN operation.
+
+    Args:
+        state (NDArray[uint8]): 2-d state in uint8 value [0, 255].
+
+    Returns:
+        (NDArray[float]): 3-d state in normalized float value [0.0, 1.0].
+    """
+    # (H,W) to (C(=1),H,W), normalize to [0, 1]
+    return state[np.newaxis, :] / 255.0
+
+
 # Atari Breakout
 # https://gymnasium.farama.org/environments/atari/breakout/
 # Action space:
@@ -238,14 +254,14 @@ for episode in range(episodes):
     done = False
     total_reward = 0
 
-    while not done:
-        # HW to C(=1)HW
-        state = state[np.newaxis, :]
-        # Normalize to [0, 1]
-        state = state / 255.0
+    # Preprocess
+    state = preprocess(state)
 
+    while not done:
         action = agent.get_action(state)
         next_state, reward, done, truncated, info = env.step(action)
+
+        next_state = preprocess(next_state)
 
         agent.update(state, action, reward, next_state, done)
         state = next_state

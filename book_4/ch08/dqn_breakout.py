@@ -1,4 +1,9 @@
-"""Play the breakout with using Deep Q Network."""
+"""Play the breakout with using Deep Q Network.
+
+Reference:
+    「DQNの進化史 ①DeepMindのDQN | どこから見てもメンダコ」
+    (https://horomary.hatenablog.com/entry/2021/01/26/233351)
+"""
 
 if "__file__" in globals():
     import os, sys
@@ -7,13 +12,15 @@ if "__file__" in globals():
 
 import copy
 import matplotlib.pyplot as plt
-import random
+import pickle
+import zlib
 from collections import deque
 
 import numpy as np
 import dezero.functions as F
 import dezero.layers as L
 
+from PIL import Image
 from dezero import Model
 from dezero import optimizers
 
@@ -24,7 +31,7 @@ class QNet(Model):
     """Neural network for Q function.
 
     Attributes:
-        c1 - c4 (dezero.layers.Linear): Conv2D layers.
+        c1 - c3 (dezero.layers.Linear): Conv2D layers.
         l1 - l2 (dezero.layers.Linear): Linear layers.
     """
 
@@ -35,11 +42,10 @@ class QNet(Model):
             action_size (int): Size of an action space.
         """
         super().__init__()
-        self.c1 = L.Conv2d(32, kernel_size=3, stride=1, pad=1)
-        self.c2 = L.Conv2d(64, kernel_size=3, stride=1, pad=1)
-        self.c3 = L.Conv2d(128, kernel_size=3, stride=1, pad=1)
-        self.c4 = L.Conv2d(256, kernel_size=3, stride=1, pad=1)
-        self.l1 = L.Linear(256)
+        self.c1 = L.Conv2d(32, kernel_size=8, stride=4)
+        self.c2 = L.Conv2d(64, kernel_size=4, stride=2)
+        self.c3 = L.Conv2d(64, kernel_size=3, stride=1)
+        self.l1 = L.Linear(512)
         self.l2 = L.Linear(action_size)
 
     def forward(self, x):
@@ -51,19 +57,11 @@ class QNet(Model):
         Returns:
             (dezero.Variable): Value of the Q function.
         """
-        if x.ndim == 3:
-            # Extend a batch dimension
-            x = F.reshape(x, (1, *x.shape))
         x = F.relu(self.c1(x))
-        x = F.pooling(x, 2, 2)
         x = F.relu(self.c2(x))
-        x = F.pooling(x, 2, 2)
         x = F.relu(self.c3(x))
-        x = F.pooling(x, 2, 2)
-        x = F.relu(self.c4(x))
-        x = F.pooling(x, 2, 2)
         x = F.reshape(x, (x.shape[0], -1))
-        x = F.dropout(F.relu(self.l1(x)))
+        x = F.relu(self.l1(x))
         x = self.l2(x)
         return x
 
@@ -103,6 +101,8 @@ class ReplayBuffer:
             done (bool): Flag, True when the episode finishes.
         """
         data = (state, action, reward, next_state, done)
+        # Compress the data to store a large amount of data
+        data = zlib.compress(pickle.dumps(data))
         self.buffer.append(data)
 
     def __len__(self):
@@ -120,12 +120,16 @@ class ReplayBuffer:
             (Tuple[NDArray[float], NDArray[int], NDArray[float], NDArray[float], NDArray[bool]]):
                 Mini-batch experience.
         """
-        data = random.sample(self.buffer, self.batch_size)
+        # Get random indices
+        N = len(self.buffer)
+        indices = np.random.choice(np.arange(N), replace=False, size=self.batch_size)
+        # Decompress the data
+        data = [pickle.loads(zlib.decompress(self.buffer[idx])) for idx in indices]
 
-        state = np.stack([x[0] for x in data])
+        state = np.concatenate([x[0] for x in data])  # Concat to a batch dimension
         action = np.array([x[1] for x in data])
         reward = np.array([x[2] for x in data])
-        next_state = np.stack([x[3] for x in data])
+        next_state = np.concatenate([x[3] for x in data])  # Concat to a batch dimension
         done = np.array([x[4] for x in data]).astype(np.int32)
 
         return state, action, reward, next_state, done
@@ -148,17 +152,26 @@ class DQNAgent:
         optimizer (dezero.optimizer): Optimizer of the network.
     """
 
-    def __init__(self):
-        self.gamma = 0.98
-        self.lr = 0.0005
+    def __init__(self, weight_path=None):
+        """Initialize.
+
+        Args:
+            weight_path (str): Path to the pretrained weight (.npz).
+        """
+        self.gamma = 0.99
+        self.lr = 0.00025
         self.epsilon = 0.1
-        self.buffer_size = 10000
+        self.buffer_size = 1000000
         self.batch_size = 32
-        self.action_size = 2
+        self.action_size = 4
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, self.batch_size)
         self.qnet = QNet(self.action_size)
         self.qnet_target = QNet(self.action_size)
+        # Load weights when it is specified
+        if weight_path is not None:
+            self.qnet.load_weights(weight_path)
+            self.qnet_target.load_weights(weight_path)
         self.optimizer = optimizers.Adam(self.lr)
         self.optimizer.setup(self.qnet)
 
@@ -166,7 +179,7 @@ class DQNAgent:
         """Synchronize the network and the target network."""
         self.qnet_target = copy.deepcopy(self.qnet)  # Deep copy
 
-    def get_action(self, state):
+    def get_action(self, state, epsilon=None):
         """Get an action of the agent.
 
         Args:
@@ -175,11 +188,13 @@ class DQNAgent:
         Returns:
             (int): Action of the agent.
         """
+        if epsilon is None:
+            epsilon = self.epsilon
+
         # Epsilon-greedy method
-        if np.random.rand() < self.epsilon:
+        if np.random.rand() < epsilon:
             return np.random.choice(self.action_size)
         else:
-            state = state[np.newaxis, :]  # Add batch dimension
             qs = self.qnet(state)
             return qs.data.argmax()
 
@@ -193,11 +208,6 @@ class DQNAgent:
             next_state (NDArray[float]): Next state.
             done (bool): Flag, True when the episode finishes.
         """
-        # Add en experience to the replay buffer
-        self.replay_buffer.add(state, action, reward, next_state, done)
-        if len(self.replay_buffer) < self.batch_size:
-            return
-
         state, action, reward, next_state, done = self.replay_buffer.get_batch()
         qs = self.qnet(state)
         q = qs[np.arange(self.batch_size), action]  # Extract Q values
@@ -219,13 +229,20 @@ def preprocess(state):
     """Preprocess a state for the CNN operation.
 
     Args:
-        state (NDArray[uint8]): 2-d state in uint8 value [0, 255].
+        state (NDArray[uint8]): 2-d state with the shape of (210, 160).
 
     Returns:
-        (NDArray[float]): 3-d state in normalized float value [0.0, 1.0].
+        (NDArray[float]): Normalized 2-d state with the shape of (84, 84).
     """
-    # (H,W) to (C(=1),H,W), normalize to [0, 1]
-    return state[np.newaxis, :] / 255.0
+    # Crop game area: (164, 144)
+    croped = state[32:-14, 8:-8]
+
+    # Resize to (84, 84)
+    resized = Image.fromarray(croped).resize((84, 84))
+    resized = np.array(resized)
+
+    # Normalize to [0.0, 1.0]
+    return np.array(resized) / 255.0
 
 
 # Atari Breakout
@@ -244,39 +261,82 @@ def preprocess(state):
 #       np.uint8 array with shape=(210,160)
 env = gym.make("ALE/Breakout-v5", obs_type="grayscale")
 
-episodes = 300
-sync_interval = 20
+episodes = 5000
 agent = DQNAgent()
+
+total_steps = 0
 reward_history = []
 
 for episode in range(episodes):
     state = env.reset()[0]
+    lives = 5  # Game lives
     done = False
     total_reward = 0
 
     # Preprocess
     state = preprocess(state)
 
+    # POMDP (Pertially Observable Markov Decision Process):
+    # use recent 4 frames as a current state, use duplicated first frames firstly
+    states = deque([state] * 4, maxlen=4)
+
+    # Annealing of probability of the exploration:
+    # reduce it at first 1,000,000 steps and then fix it to 0.1
+    epsilon_scheduler = lambda steps: max(1.0 - 0.9 * steps / 1000000, 0.1)
+
     while not done:
-        action = agent.get_action(state)
+        total_steps += 1
+        epsilon = epsilon_scheduler(total_steps)
+
+        # Get recent 4 frames
+        state = np.stack(states)[np.newaxis, :]
+
+        action = agent.get_action(state, epsilon=epsilon)
         next_state, reward, done, truncated, info = env.step(action)
 
-        next_state = preprocess(next_state)
+        # Stack the current frame
+        states.append(preprocess(next_state))
+        next_state = np.stack(states)[np.newaxis, :]
 
-        agent.update(state, action, reward, next_state, done)
-        state = next_state
+        # If the lives decreased,
+        # thought it as the end of the game as an experience
+        if info["lives"] != lives:
+            lives = info["lives"]
+            done_experience = True
+        else:
+            done_experience = done
+
+        # Add en experience to the replay buffer
+        agent.replay_buffer.add(state, action, reward, next_state, done_experience)
+
         total_reward += reward
 
-    if episode % sync_interval == 0:
-        agent.sync_qnet()
+        # Start learning after enough experiences are stored in the buffer
+        if len(agent.replay_buffer) > 50000:
+            if total_steps % 4 == 0:
+                # Update the agent
+                agent.update(state, action, reward, next_state, done)
+            if total_steps % 10000 == 0:
+                # Sync the target Q network
+                agent.sync_qnet()
 
     reward_history.append(total_reward)
-    if episode % 10 == 0:
+    if episode % 100 == 0:
         print(f"episode: {episode}, total reward: {total_reward}")
+        # Save the weight
+        agent.qnet.save_weights("./output/qnet.npz")
+
+
+# Plot rewards
+plt.xlabel("Episode")
+plt.ylabel("Total reward")
+plt.plot(range(len(reward_history)), reward_history)
+plt.savefig("output/breakout_reward_history.png")
 
 
 # Play Breakout
 env = gym.make("ALE/Breakout-v5", obs_type="grayscale", render_mode="human")
+agent = DQNAgent(weight_path="./output/qnet.npz")
 
 agent.epsilon = 0  # Greedy policy
 done = False

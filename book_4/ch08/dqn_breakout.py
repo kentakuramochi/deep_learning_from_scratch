@@ -245,96 +245,98 @@ def preprocess(state):
     return np.array(resized) / 255.0
 
 
-# Atari Breakout
-# https://gymnasium.farama.org/environments/atari/breakout/
-# Action space:
-#   - 0: No operation
-#   - 1: Fire (throw the ball)
-#   - 2: Move the paddle to right
-#   - 3: Move the paddle to left
-# Observation space:
-#   - obs_type="rgb":
-#       np.uint8 array with shape=(210,160,3)
-#   - obs_type="ram":
-#       np.uint8 array with shape=(128,)
-#   - obs_type="grayscale":
-#       np.uint8 array with shape=(210,160)
-env = gym.make("ALE/Breakout-v5", obs_type="grayscale")
+do_learning = True
 
-episodes = 5000
-agent = DQNAgent()
+if do_learning:
+    # Atari Breakout
+    # https://gymnasium.farama.org/environments/atari/breakout/
+    # Action space:
+    #   - 0: No operation
+    #   - 1: Fire (throw the ball)
+    #   - 2: Move the paddle to right
+    #   - 3: Move the paddle to left
+    # Observation space:
+    #   - obs_type="rgb":
+    #       np.uint8 array with shape=(210,160,3)
+    #   - obs_type="ram":
+    #       np.uint8 array with shape=(128,)
+    #   - obs_type="grayscale":
+    #       np.uint8 array with shape=(210,160)
+    env = gym.make("ALE/Breakout-v5", obs_type="grayscale")
 
-total_steps = 0
-reward_history = []
+    episodes = 5000
+    agent = DQNAgent()
 
-for episode in range(episodes):
-    state = env.reset()[0]
-    lives = 5  # Game lives
-    done = False
-    total_reward = 0
+    total_steps = 0
+    reward_history = []
 
-    # Preprocess
-    state = preprocess(state)
+    for episode in range(episodes):
+        state = env.reset()[0]
+        lives = 5  # Game lives
+        done = False
+        total_reward = 0
 
-    # POMDP (Pertially Observable Markov Decision Process):
-    # use recent 4 frames as a current state, use duplicated first frames firstly
-    states = deque([state] * 4, maxlen=4)
+        # Preprocess
+        state = preprocess(state)
 
-    # Annealing of probability of the exploration:
-    # reduce it at first 1,000,000 steps and then fix it to 0.1
-    epsilon_scheduler = lambda steps: max(1.0 - 0.9 * steps / 1000000, 0.1)
+        # POMDP (Pertially Observable Markov Decision Process):
+        # use recent 4 frames as a current state, use duplicated first frames firstly
+        states = deque([state] * 4, maxlen=4)
 
-    while not done:
-        total_steps += 1
-        epsilon = epsilon_scheduler(total_steps)
+        # Annealing of probability of the exploration:
+        # reduce it at first 1,000,000 steps and then fix it to 0.1
+        epsilon_scheduler = lambda steps: max(1.0 - 0.9 * steps / 1000000, 0.1)
 
-        # Get recent 4 frames
-        state = np.stack(states)[np.newaxis, :]
+        while not done:
+            total_steps += 1
+            epsilon = epsilon_scheduler(total_steps)
 
-        action = agent.get_action(state, epsilon=epsilon)
-        next_state, reward, done, truncated, info = env.step(action)
+            # Get recent 4 frames
+            state = np.stack(states)[np.newaxis, :]
 
-        # Stack the current frame
-        states.append(preprocess(next_state))
-        next_state = np.stack(states)[np.newaxis, :]
+            action = agent.get_action(state, epsilon=epsilon)
+            next_state, reward, done, truncated, info = env.step(action)
 
-        # If the lives decreased,
-        # thought it as the end of the game as an experience
-        if info["lives"] != lives:
-            lives = info["lives"]
-            done_experience = True
-        else:
-            done_experience = done
+            # Stack the current frame
+            states.append(preprocess(next_state))
+            next_state = np.stack(states)[np.newaxis, :]
 
-        # Add en experience to the replay buffer
-        agent.replay_buffer.add(state, action, reward, next_state, done_experience)
+            # If the lives decreased,
+            # thought it as the end of the game as an experience
+            if info["lives"] != lives:
+                lives = info["lives"]
+                done_experience = True
+            else:
+                done_experience = done
 
-        total_reward += reward
+            # Add en experience to the replay buffer
+            agent.replay_buffer.add(state, action, reward, next_state, done_experience)
 
-        # Start learning after enough experiences are stored in the buffer
-        if len(agent.replay_buffer) > 50000:
-            if total_steps % 4 == 0:
-                # Update the agent
-                agent.update(state, action, reward, next_state, done)
-            if total_steps % 10000 == 0:
-                # Sync the target Q network
-                agent.sync_qnet()
+            total_reward += reward
 
-    reward_history.append(total_reward)
-    if episode % 100 == 0:
-        print(f"episode: {episode}, total reward: {total_reward}")
-        # Save the weight
-        agent.qnet.save_weights("./output/qnet.npz")
+            # Start learning after enough experiences are stored in the buffer
+            if len(agent.replay_buffer) > 50000:
+                if total_steps % 4 == 0:
+                    # Update the agent
+                    agent.update(state, action, reward, next_state, done)
+                if total_steps % 10000 == 0:
+                    # Sync the target Q network
+                    agent.sync_qnet()
+
+        reward_history.append(total_reward)
+        if episode % 100 == 0:
+            print(f"episode: {episode}, total reward: {total_reward}")
+            # Save the weight
+            agent.qnet.save_weights("./output/qnet.npz")
+
+    # Plot rewards
+    plt.xlabel("Episode")
+    plt.ylabel("Total reward")
+    plt.plot(range(len(reward_history)), reward_history)
+    plt.savefig("output/breakout_reward_history.png")
 
 
-# Plot rewards
-plt.xlabel("Episode")
-plt.ylabel("Total reward")
-plt.plot(range(len(reward_history)), reward_history)
-plt.savefig("output/breakout_reward_history.png")
-
-
-# Play Breakout
+# Play Breakout with using the trained model
 env = gym.make("ALE/Breakout-v5", obs_type="grayscale", render_mode="human")
 agent = DQNAgent(weight_path="./output/qnet.npz")
 
@@ -342,10 +344,17 @@ agent.epsilon = 0  # Greedy policy
 done = False
 total_reward = 0
 
+state = env.reset()[0]
+
+state = preprocess(state)
+states = deque([state] * 4, maxlen=4)
+
 while not done:
+    state = np.stack(states)[np.newaxis, :]
     action = agent.get_action(state)
     next_state, reward, done, truncated, info = env.step(action)
-    state = next_state
+    states.append(preprocess(next_state))
+    next_state = np.stack(states)[np.newaxis, :]
     total_reward += reward
     env.render()
 

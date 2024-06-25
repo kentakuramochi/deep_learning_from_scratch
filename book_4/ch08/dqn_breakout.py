@@ -245,24 +245,29 @@ def preprocess(state):
     return np.array(resized) / 255.0
 
 
+# Atari Breakout
+# https://gymnasium.farama.org/environments/atari/breakout/
+# Action space:
+#   - 0: No operation
+#   - 1: Fire (throw the ball)
+#   - 2: Move the paddle to right
+#   - 3: Move the paddle to left
+# Observation space:
+#   - obs_type="rgb":
+#       np.uint8 array with shape=(210,160,3)
+#   - obs_type="ram":
+#       np.uint8 array with shape=(128,)
+#   - obs_type="grayscale":
+#       np.uint8 array with shape=(210,160)
+# Variant:
+#   "BreakoutDeterministic-v4":
+#       skip every 4 frames and doing deteministic actions
+env_id = "BreakoutDeterministic-v4"
+
 do_learning = True
 
 if do_learning:
-    # Atari Breakout
-    # https://gymnasium.farama.org/environments/atari/breakout/
-    # Action space:
-    #   - 0: No operation
-    #   - 1: Fire (throw the ball)
-    #   - 2: Move the paddle to right
-    #   - 3: Move the paddle to left
-    # Observation space:
-    #   - obs_type="rgb":
-    #       np.uint8 array with shape=(210,160,3)
-    #   - obs_type="ram":
-    #       np.uint8 array with shape=(128,)
-    #   - obs_type="grayscale":
-    #       np.uint8 array with shape=(210,160)
-    env = gym.make("ALE/Breakout-v5", obs_type="grayscale")
+    env = gym.make(env_id, obs_type="grayscale")
 
     episodes = 5000
     agent = DQNAgent()
@@ -337,7 +342,7 @@ if do_learning:
 
 
 # Play Breakout with using the trained model
-env = gym.make("ALE/Breakout-v5", obs_type="grayscale", render_mode="human")
+env = gym.make(env_id, obs_type="grayscale", render_mode="human")
 agent = DQNAgent(weight_path="./output/qnet.npz")
 
 agent.epsilon = 0  # Greedy policy

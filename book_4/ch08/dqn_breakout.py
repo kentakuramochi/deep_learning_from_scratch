@@ -269,8 +269,8 @@ do_learning = True
 if do_learning:
     env = gym.make(env_id, obs_type="grayscale")
 
-    episodes = 5000
-    agent = DQNAgent()
+    episodes = 10000
+    agent = DQNAgent(weight_path="./output/qnet.npz")
 
     total_steps = 0
     reward_history = []

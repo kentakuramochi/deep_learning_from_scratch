@@ -44,10 +44,10 @@ class QNet(Model):
         """Forward propagation.
 
         Args:
-            x (dezero.Variable): State in one-hot vector.
+            x (dezero.core.Variable): Current state.
 
         Returns:
-            (dezero.Variable): Value of the Q function.
+            (dezero.core.Variable): Value of the Q function.
         """
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))

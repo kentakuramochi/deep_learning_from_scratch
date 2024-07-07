@@ -25,7 +25,7 @@ def one_hot(state):
         state (Tuple[int, int]): State.
 
     Returns:
-        (numpy.ndarray[float]): State in one-hot vector.
+        (NDArray[float]): State in one-hot vector.
     """
     HEIGHT, WIDTH = 3, 4
     vec = np.zeros(HEIGHT * WIDTH, dtype=np.float32)
@@ -52,10 +52,10 @@ class QNet(Model):
         """Forward propagation.
 
         Args:
-            x (dezero.Variable): State in one-hot vector.
+            x (dezero.core.Variable): Current state in one-hot vector.
 
         Returns:
-            (dezero.Variable): Value of the Q function.
+            (dezero.core.Variable): Value of the Q function.
         """
         x = F.relu(self.l1(x))
         x = self.l2(x)
@@ -88,7 +88,7 @@ class QLearningAgent:
         """Get an action of the agent.
 
         Args:
-            state_vec (numpy.ndarray[float]): Current state in one-hot vector.
+            state_vec (NDArray[float]): Current state in one-hot vector.
 
         Returns:
             (int): Action of the agent.
@@ -104,10 +104,10 @@ class QLearningAgent:
         """Update the Q function.
 
         Args:
-            state (numpy.ndarray[float]): Current state in one-hot vector.
+            state (NDArray[float]): Current state in one-hot vector.
             action (int): Action of the agent.
             reward (float): Reward.
-            next_state (numpy.ndarray[float]): Next state in one-hot vector.
+            next_state (NDArray[float]): Next state in one-hot vector.
             done (bool): Flag, True if an episode finished.
         """
         if done:

@@ -46,10 +46,10 @@ class TwoLayerNet(Model):
         """Forward propagation.
 
         Args:
-            x (dezero.Variable): Network input.
+            x (dezero.core.Variable): Network input.
 
         Returns:
-            (dezero.Variable): Network output.
+            (dezero.core.Variable): Network output.
         """
         y = F.sigmoid(self.l1(x))
         y = self.l2(y)

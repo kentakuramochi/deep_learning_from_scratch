@@ -9,7 +9,7 @@ class NonStatBandit:
 
     Attributes:
         arms (int): Number of the bandits.
-        rates (numpy.ndarray[float]): Winning rates of each one-armed bandits (slot machines).
+        rates (NDArray[float]): Winning rates of each one-armed bandits (slot machines).
     """
 
     def __init__(self, arms=10):
@@ -43,7 +43,7 @@ class AlphaAgent:
 
     Attributes:
         epsilon (float): Probability of the exploration.
-        Qs (numpy.ndarray[float]): Estimated action values for each action.
+        Qs (NDArray[float]): Estimated action values for each action.
         alpha (float): Coefficient of the exponential moving average for action values.
     """
 

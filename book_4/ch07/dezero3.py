@@ -25,10 +25,10 @@ def predict(x):
     """Predict y = Wx.
     
     Args:
-        x (dezero.Variable): Input x.
+        x (dezero.core.Variable): Input x.
 
     Returns:
-        (dezero.Variable): Function y = Wx.
+        (dezero.core.Variable): Function y = Wx.
     """
     y = F.matmul(x, W) + b
     return y

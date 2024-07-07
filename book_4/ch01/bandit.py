@@ -6,7 +6,7 @@ class Bandit:
     """Multi-armed bandit.
 
     Attributes:
-        rates (numpy.ndarray[float]): Winning rates of each one-armed bandits (slot machines).
+        rates (NDArray[float]): Winning rates of each one-armed bandits (slot machines).
     """
 
     def __init__(self, arms=10):
@@ -38,8 +38,8 @@ class Agent:
 
     Attributes:
         epsilon (float): Probability of the exploration.
-        Qs (numpy.ndarray[float]): Estimated action values for each action.
-        ns (numpy.ndarray[int]): Number of each action.
+        Qs (NDArray[float]): Estimated action values for each action.
+        ns (NDArray[int]): Number of each action.
     """
 
     def __init__(self, epsilon, action_size=10):

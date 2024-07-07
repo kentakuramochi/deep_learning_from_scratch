@@ -39,10 +39,10 @@ class Policy(Model):
         """Forward propagation.
 
         Args:
-            x (dezero.Variable): Current state.
+            x (dezero.core.Variable): Current state.
 
         Returns:
-            (dezero.Variable): Policy.
+            (dezero.core.Variable): Policy.
         """
         x = F.relu(self.l1(x))
         x = F.softmax(self.l2(x))
@@ -56,7 +56,7 @@ class Agent:
         gamma (float): Discount rate.
         lr (float): Learning rate.
         action_size (int): Size of an action space.
-        memory (List[Tuple[float, dezero.Variable]]):
+        memory (List[Tuple[float, dezero.core.Variable]]):
             List of reward and action probabilities.
         pi (Policy): Neural network for the policy.
         optimizer (dezero.optimizer): Optimizer of the network.
@@ -90,7 +90,7 @@ class Agent:
 
         Args:
             reward(float): Reward.
-            prob(dezero.Variable): Action probabilities.
+            prob(dezero.core.Variable): Action probabilities.
         """
         data = (reward, prob)
         self.memory.append(data)

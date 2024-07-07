@@ -9,7 +9,7 @@ class Renderer:
     """Renderer of the gridworld.
 
     Attributes:
-        reward_map (numpy.ndarray[float]): Rewards of each grid.
+        reward_map (NDArray[float]): Rewards of each grid.
         goal_state (Tuple[int, int]): Grid index of the goal.
         wall_state (Tuple[int, int]): Grid index of the wall.
         ys (int): Height of the world.

@@ -36,7 +36,7 @@ class GridWorld:
     Attributes:
         action_space (List[int]): Action space, candidates of the actions.
         action_meaning (Dict[int, str]): Meaning of each action.
-        reward_map (numpy.ndarray[float]): Rewards of each grid.
+        reward_map (NDArray[float]): Rewards of each grid.
         goal_state (Tuple[int, int]): Grid index of the goal.
         wall_state (Tuple[int, int]): Grid index of the wall.
         start_state (Tuple[int, int]): Grid index of the start.

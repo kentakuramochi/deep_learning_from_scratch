@@ -78,6 +78,11 @@ class Agent:
 
         Args:
             state (NDArray[float]): Current state.
+
+        Returns:
+            (Tuple[int, NDArray[float]]):
+                (int): Action of the agent.
+                (NDArray[float]): Policy of the agent.
         """
         state = state[np.newaxis, :]  # Add batch dim
         probs = self.pi(state)

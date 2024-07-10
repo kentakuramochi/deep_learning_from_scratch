@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from PIL import Image
+
 
 class Compose:
     """Compose several transforms"""
@@ -15,6 +17,23 @@ class Compose:
         for t in self.transforms:
             img = t(img)
         return img
+
+
+# =============================================================================
+# Transforms for PIL Image
+# =============================================================================
+class Convert:
+    def __init__(self, mode="RGB"):
+        self.mode = mode
+
+    def __call__(self, img):
+        if self.mode == "BGR":
+            img = img.convert("RGB")
+            r, g, b = img.split()
+            img = Image.merge("RGB", (b, g, r))
+            return img
+        else:
+            return img.convert(self.mode)
 
 
 # =============================================================================
